@@ -57,6 +57,13 @@ export function useExperiment() {
         }))
         if (msg.type !== 'progress') w.terminate()
       }
+      // Worker 파일을 불러오지 못하거나 메시지 밖에서 예외가 나면 진행 중 상태로 멈추지 않게 오류로 표시한다
+      w.onerror = (e) => {
+        if (id !== jobId.current) return
+        e.preventDefault()
+        setRuns((prev) => ({ ...prev, [algoId]: { done: 0, error: `Worker 오류: ${e.message || '불러오기 실패'}` } }))
+        w.terminate()
+      }
       const req: ExperimentRequest = { jobId: id, algoId, n: cfg.n, trials: cfg.trials, rngKind: cfg.rngKind, seed: cfg.seed }
       w.postMessage(req)
       workers.current.push(w)

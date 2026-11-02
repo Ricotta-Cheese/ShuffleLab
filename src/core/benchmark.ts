@@ -19,6 +19,8 @@ export interface BenchOptions {
   rng: Rng
   /** 한 번 잴 때 최소한 이만큼은 걸리도록 batch를 늘린다 (타이머 해상도 대응) */
   minBatchMs?: number
+  /** 측정 전에 최소한 이만큼 워밍업한다 */
+  minWarmupMs?: number
   /** batch × n 상한 (메모리 보호) */
   maxBatchElements?: number
   now?: () => number
@@ -33,7 +35,14 @@ export interface BenchOptions {
  * - 처음 몇 번은 JIT 최적화 전이라 느리므로 워밍업 후 잰다.
  */
 export function benchmarkAlgorithm(algoId: AlgorithmId, n: number, opts: BenchOptions): BenchPoint {
-  const { samples, rng, minBatchMs = 5, maxBatchElements = 4_000_000, now = () => performance.now() } = opts
+  const {
+    samples,
+    rng,
+    minBatchMs = 5,
+    minWarmupMs = 20,
+    maxBatchElements = 4_000_000,
+    now = () => performance.now(),
+  } = opts
   const algo = getAlgorithm(algoId)
   const base = Array.from({ length: n }, (_, i) => i)
   let sink = 0
@@ -45,8 +54,9 @@ export function benchmarkAlgorithm(algoId: AlgorithmId, n: number, opts: BenchOp
     return (now() - t0) / batch
   }
 
-  // 워밍업
-  for (let k = 0; k < 3; k++) timeBatch(1)
+  // 워밍업: 최소 3번, 그리고 JIT가 최적화를 마칠 수 있도록 minWarmupMs 동안 더 돌린다
+  const warmStart = now()
+  for (let k = 0; k < 3 || (now() - warmStart < minWarmupMs && k < 1000); k++) timeBatch(1)
 
   // batch 크기 정하기: 한 번 재는 데 minBatchMs 이상 걸릴 때까지 두 배씩
   let batch = 1

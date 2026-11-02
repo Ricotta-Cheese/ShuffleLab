@@ -65,6 +65,13 @@ export function useBenchmark() {
       })
       if (msg.type === 'done' || msg.type === 'error') stop()
     }
+    // Worker 파일을 불러오지 못하거나 메시지 밖에서 예외가 나면 측정 중 상태로 멈추지 않게 오류로 표시한다
+    w.onerror = (e) => {
+      if (id !== jobId.current) return
+      e.preventDefault()
+      setState((s) => ({ ...s, measuring: undefined, status: 'error', error: `Worker 오류: ${e.message || '불러오기 실패'}` }))
+      stop()
+    }
     const req: BenchRequest = { ...config, jobId: id }
     w.postMessage(req)
     worker.current = w

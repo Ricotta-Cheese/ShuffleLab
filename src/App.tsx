@@ -32,6 +32,7 @@ export default function App() {
             {screens.map((s) => (
               <Route key={s.path} path={s.path} element={<s.Component />} />
             ))}
+            <Route path="*" element={<Navigate to={screens[0].path} replace />} />
           </Routes>
         </Suspense>
       </main>
