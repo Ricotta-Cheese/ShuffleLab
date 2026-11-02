@@ -18,10 +18,13 @@ export default function TermPopover({ term, title, children }: { term: ReactNode
   useLayoutEffect(() => {
     if (!open || !root.current || !panel.current) return
     const place = () => {
+      const p = panel.current!
       const anchor = root.current!.getBoundingClientRect().left
-      const width = panel.current!.offsetWidth
-      const maxLeft = window.innerWidth - GUTTER - width
-      panel.current!.style.left = `${Math.max(GUTTER, Math.min(anchor, maxLeft)) - anchor}px`
+      // 휴대폰 브라우저는 창이 화면 밖으로 나가 있으면 페이지 폭 자체를 넓혀 버려서 화면 폭을 잘못 잰다.
+      // 먼저 창을 왼쪽 끝에 붙여 넘치지 않게 한 뒤 화면 폭을 잰다.
+      p.style.left = `${GUTTER - anchor}px`
+      const maxLeft = document.documentElement.clientWidth - GUTTER - p.offsetWidth
+      p.style.left = `${Math.max(GUTTER, Math.min(anchor, maxLeft)) - anchor}px`
     }
     place()
     window.addEventListener('resize', place)

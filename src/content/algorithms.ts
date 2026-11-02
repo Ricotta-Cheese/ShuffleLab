@@ -14,6 +14,8 @@ export interface AlgorithmContent {
   uniformWhy: string
   strengths: string[]
   limits: string[]
+  /** 이 알고리즘이 난수를 얻는 호출. B 화면의 난수 설명 창에 쓴다. */
+  rngCall: { method: 'int' | 'float'; code: string; count: string }
 }
 
 export const algorithmContent: Record<AlgorithmId, AlgorithmContent> = {
@@ -35,6 +37,7 @@ export const algorithmContent: Record<AlgorithmId, AlgorithmContent> = {
       '선택 범위를 0~i가 아니라 0~n−1로 잘못 쓰면 일부 순열이 더 자주 나와 균등성이 깨져요.',
       '0~i−1로 쓰면(자기 자신 제외) Sattolo 알고리즘이 되어 원형 순열만 만들어요.',
     ],
+    rngCall: { method: 'int', code: 'rng.int(i + 1)', count: 'n−1번' },
   },
 
   'pick-remove': {
@@ -63,6 +66,7 @@ export const algorithmContent: Record<AlgorithmId, AlgorithmContent> = {
       '결과 배열이 따로 필요해 O(n) 추가 공간을 써요.',
       '삭제 대신 마지막 원소를 그 자리로 옮기면 사실상 Fisher–Yates가 돼요.',
     ],
+    rngCall: { method: 'int', code: 'rng.int(len)', count: 'n번' },
   },
 
   riffle: {
@@ -95,6 +99,7 @@ export const algorithmContent: Record<AlgorithmId, AlgorithmContent> = {
       '정확히 균등하지 않아요. 편향은 작지만 반복 횟수를 고정하면 n이 커질수록 커져요 (충분한 횟수는 약 1.5·log₂n).',
       '난수(동전)를 7n번 쓰고 복사본이 필요해서, 같은 O(n)인 Fisher–Yates보다 느리고 공간도 더 써요.',
     ],
+    rngCall: { method: 'int', code: 'rng.int(2)', count: '7n번 (동전)' },
   },
 
   'random-key': {
@@ -117,6 +122,7 @@ export const algorithmContent: Record<AlgorithmId, AlgorithmContent> = {
       '키 배열에 O(n) 추가 공간이 들어요.',
       '비교 함수가 무작위 값을 돌려주는 방식(예: sort(() => Math.random() − 0.5))은 이 알고리즘과 다르며 균등하지 않아요.',
     ],
+    rngCall: { method: 'float', code: 'rng.float()', count: 'n번' },
   },
 }
 

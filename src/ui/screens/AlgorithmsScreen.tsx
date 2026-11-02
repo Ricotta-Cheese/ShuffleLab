@@ -5,6 +5,7 @@ import type { AlgorithmContent } from '../../content/algorithms'
 import { algorithmContent } from '../../content/algorithms'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import CodeViewer from '../components/CodeViewer'
+import { RngCallTerm, SfcTerm } from '../components/RngTerms'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
 import { Card, CardHeader, Table, tbody, td, th, thead } from '../components/ui'
@@ -117,7 +118,12 @@ export default function AlgorithmsScreen() {
       <div className="space-y-4">
         <ScreenHeader id="algorithms"
           title="알고리즘 비교"
-          desc='네 알고리즘은 모두 "배열을 무작위 순서로 섞는다"는 같은 문제를 풀어요. 복잡도와 균등성을 한눈에 비교해요.'
+          desc={
+            <>
+              네 알고리즘은 모두 "배열을 무작위 순서로 섞는다"는 같은 문제를 풀어요. 난수는 모두 같은 <SfcTerm /> 생성기에서
+              얻고, 복잡도와 균등성을 한눈에 비교해요.
+            </>
+          }
         />
         <ComparisonTable />
       </div>
@@ -140,6 +146,10 @@ export default function AlgorithmsScreen() {
               <li key={p}>{p}</li>
             ))}
           </ol>
+          <p className="mt-3 border-t border-line pt-3">
+            <span className="text-xs font-semibold text-ink-3">난수 호출</span> <RngCallTerm call={c.rngCall} />
+            <span className="text-ink-3"> · 한 번 섞을 때 {c.rngCall.count}</span>
+          </p>
         </InfoCard>
 
         <CodeViewer id={id} />
