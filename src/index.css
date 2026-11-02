@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* 시각화 역할 색상: 모든 화면에서 같은 의미로 사용 */
+  --color-role-i: #2563eb; /* 현재 위치 i */
+  --color-role-j: #ea580c; /* 무작위로 선택된 j */
+  --color-role-fixed: #16a34a; /* 위치가 확정된 구간 */
+  --color-role-biased: #dc2626; /* 비균등(Naive) 경고 */
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
