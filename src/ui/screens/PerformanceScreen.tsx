@@ -3,8 +3,10 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { algorithms, getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { doublingRatios, powerOfTwoSizes, type BenchPoint } from '../../core/benchmark'
 import type { RngKind } from '../../core/rng'
+import HypothesisNote from '../components/HypothesisNote'
+import ScreenHeader from '../components/ScreenHeader'
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
-import { Button, Callout, Card, CardHeader, PageHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt } from '../format'
 import { useBenchmark } from '../useBenchmark'
@@ -89,8 +91,7 @@ export default function PerformanceScreen() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        eyebrow="F · 성능"
+      <ScreenHeader id="performance"
         title="성능 비교"
         desc="배열 크기를 두 배씩 늘리면서 셔플 1회의 실행 시간을 잰다. 크기가 두 배가 될 때 시간이 몇 배가 되는지 보면 시간 복잡도의 증가 추세를 실제로 확인할 수 있다."
       />
@@ -128,6 +129,8 @@ export default function PerformanceScreen() {
           크기는 건너뛴다 (O(n²)인 Pick & Remove가 화면을 오래 붙잡지 않도록).
         </p>
       </Card>
+
+      <H2Note byAlgo={byAlgo} />
 
       {!cfg ? (
         <p className="rounded-xl border border-dashed border-line-strong p-6 text-sm text-ink-3">
@@ -379,5 +382,30 @@ function ResultTable({
           ))}
         </tbody>
     </Table>
+  )
+}
+
+function H2Note({ byAlgo }: { byAlgo: Series[] }) {
+  const fy = byAlgo.find((s) => s.id === 'fisher-yates')?.points ?? []
+  const pr = byAlgo.find((s) => s.id === 'pick-remove')?.points ?? []
+  // 두 알고리즘을 모두 잰 가장 큰 크기
+  const common = pr.filter((p) => fy.some((q) => q.n === p.n)).at(-1)
+  const fyAt = common && fy.find((q) => q.n === common.n)
+  const lastRatio = (pts: BenchPoint[]) => doublingRatios(pts).filter((r) => r !== undefined).at(-1)
+  return (
+    <HypothesisNote id={2}>
+      {common && fyAt ? (
+        <>
+          둘 다 균등한 두 알고리즘을 n = {fmtInt(common.n)}에서 비교하면 Fisher–Yates{' '}
+          <b className="font-mono text-ink">{fmtTime(fyAt.medianMs)}</b>, Random Pick & Remove{' '}
+          <b className="font-mono text-ink">{fmtTime(common.medianMs)}</b>로 약{' '}
+          <b className="font-mono text-ink">{(common.medianMs / fyAt.medianMs).toFixed(1)}배</b> 차이가 나요. 크기가 2배일
+          때 시간은 마지막 측정 기준 각각 ×{lastRatio(fy)?.toFixed(2) ?? '—'}, ×{lastRatio(pr)?.toFixed(2) ?? '—'}였어요.
+          추가 공간은 이론적으로 O(1)과 O(n)이에요.
+        </>
+      ) : (
+        <>Fisher–Yates와 Random Pick & Remove를 함께 골라 측정하면, 같은 크기에서 두 알고리즘의 시간 차이를 여기서 보여줘요.</>
+      )}
+    </HypothesisNote>
   )
 }

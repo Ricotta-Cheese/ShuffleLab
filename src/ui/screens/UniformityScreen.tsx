@@ -17,9 +17,11 @@ import { exactDistribution } from '../../core/stats/exact'
 import { permutationRank, permutationUnrank } from '../../core/stats/permutation'
 import { toProbabilities, totalVariation, uniformity } from '../../core/stats/tvd'
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
+import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
+import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Callout, Card, CardHeader, IntInput, PageHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, IntInput, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt, fmtNum, fmtPct } from '../format'
 import { useExperiment } from '../useExperiment'
@@ -95,8 +97,7 @@ export default function UniformityScreen() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        eyebrow="E · 균등성"
+      <ScreenHeader id="uniformity"
         title="반복 실험 및 균등성 분석"
         desc="같은 알고리즘을 여러 번 실행해 순열별 발생 확률을 측정하고, 모든 순열이 1/n! 확률로 나오는 균등분포와의 차이를 TVD로 잰다."
       />
@@ -133,6 +134,8 @@ export default function UniformityScreen() {
           </div>
         </div>
       </Card>
+
+      <H1Note results={results} config={config} />
 
       {!config ? (
         <p className="rounded-xl border border-dashed border-line-strong p-6 text-sm text-ink-3">
@@ -297,5 +300,33 @@ function LegendItem({ swatch, children }: { swatch: ReactNode; children: ReactNo
       {swatch}
       {children}
     </span>
+  )
+}
+
+function H1Note({
+  results,
+  config,
+}: {
+  results: { id: AlgorithmId; algo: { name: string }; stats?: { tvd: number }; theoryTvd: number }[]
+  config?: { n: number; trials: number }
+}) {
+  const fy = results.find((r) => r.id === 'fisher-yates')
+  const naive = results.find((r) => r.id === 'naive-swap')
+  const ready = config && fy?.stats && naive?.stats
+  return (
+    <HypothesisNote id={1}>
+      {ready ? (
+        <>
+          둘 다 O(n)인 두 알고리즘을 같은 조건(n = {config.n}, {fmtInt(config.trials)}회)에서 돌린 결과예요. 관측
+          TVD는 Fisher–Yates <b className="font-mono text-ink">{fmtNum(fy.stats!.tvd, 4)}</b>, Naive Random Swap{' '}
+          <b className="font-mono text-ink">{fmtNum(naive.stats!.tvd, 4)}</b>이고, 모든 경로를 열거한 이론 TVD는 각각{' '}
+          <span className="font-mono">{fmtNum(fy.theoryTvd, 4)}</span>,{' '}
+          <span className="font-mono">{fmtNum(naive.theoryTvd, 4)}</span>예요. 반복 횟수를 늘리면 관측값이 이론값에 얼마나
+          가까워지는지도 확인해요.
+        </>
+      ) : (
+        <>Fisher–Yates와 Naive Random Swap을 함께 골라 실험하면, 같은 조건에서 두 알고리즘의 TVD를 여기서 바로 비교해요.</>
+      )}
+    </HypothesisNote>
   )
 }

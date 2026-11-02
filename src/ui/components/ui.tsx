@@ -4,7 +4,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(' ')
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cx('rounded-xl border border-line bg-surface p-4 sm:p-5', className)}>{children}</section>
+  return <section className={cx('min-w-0 rounded-xl border border-line bg-surface p-4 sm:p-5', className)}>{children}</section>
 }
 
 /** 화면 맨 위 제목 */

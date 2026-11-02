@@ -19,6 +19,10 @@ export const description = {
     { name: '균등성', en: 'Uniformity', desc: '가능한 모든 순열이 공평한 확률로 생성되는가?' },
   ],
 
+  // 바닥글 문구
+  course: '2026학년도 2학기 알고리즘 과제 · 주제 A: 알고리즘 동작 시각화',
+  aiNote: '이 사이트는 AI 도구의 도움을 받아 구현했어요.',
+
   links: {
     github: 'https://github.com/Ricotta-Cheese/ShuffleLab',
     report: '', // PDF 보고서 링크 (예: public/report.pdf에 넣으면 '/report.pdf')

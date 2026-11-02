@@ -4,8 +4,9 @@ import { algorithms, getAlgorithm } from '../../core/algorithms'
 import { algorithmContent } from '../../content/algorithms'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import Pseudocode from '../components/Pseudocode'
+import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Card, PageHeader, Table, tbody, td, th, thead } from '../components/ui'
+import { Card, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor } from '../chartTheme'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
@@ -60,8 +61,7 @@ export default function AlgorithmsScreen() {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <PageHeader
-          eyebrow="B · 알고리즘"
+        <ScreenHeader id="algorithms"
           title="알고리즘 비교"
           desc='네 알고리즘은 모두 "배열을 무작위 순서로 섞는다"는 같은 문제를 푼다. 복잡도와 균등성을 한눈에 비교한다.'
         />
@@ -80,7 +80,7 @@ export default function AlgorithmsScreen() {
         </div>
         <p className="text-ink-2">{c.summary}</p>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <InfoCard title="기본 원리">
             <ol className="list-decimal space-y-1 pl-5">
               {c.principle.map((p) => (

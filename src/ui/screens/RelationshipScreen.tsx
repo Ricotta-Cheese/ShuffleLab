@@ -3,11 +3,14 @@ import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Toolt
 import { getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
 import { kendall, originalPositions } from '../../core/stats/kendall'
+import { Link } from 'react-router'
 import AlgorithmPicker from '../components/AlgorithmPicker'
+import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
 import Metric from '../components/Metric'
+import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Card, CardHeader, IntInput, PageHeader, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Card, CardHeader, IntInput, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtNum, fmtPct } from '../format'
 import { randomDistinctValues } from '../inputArray'
@@ -36,8 +39,7 @@ export default function RelationshipScreen() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        eyebrow="D · 관계성"
+      <ScreenHeader id="relationship"
         title="관계성 분석"
         desc="한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 측정한다. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 센다."
       />
@@ -80,6 +82,16 @@ export default function RelationshipScreen() {
           </p>
         </Card>
       </div>
+
+      <HypothesisNote id={3}>
+        이번 결과는 <b className="font-mono text-ink">R = {fmtNum(rel.r)}</b> ({algo.name})예요. R은 원본 순서와 얼마나
+        닮았는지만 재고, 모든 순열이 공평하게 나오는지는 알려주지 않아요. 알고리즘을 Naive Random Swap(비균등)으로
+        바꿔 R을 비교해 보고, 균등성은{' '}
+        <Link to="/uniformity" className="text-link hover:underline">
+          E 균등성
+        </Link>
+        에서 함께 확인해요.
+      </HypothesisNote>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
@@ -350,6 +362,14 @@ function TauDistribution({
           <Metric label="평균 τ" value={fmtNum(stats.mean)} />
           <Metric label="R ≥ 0.5인 실행 비율" value={fmtPct(stats.highR)} />
         </div>
+      </div>
+      <div className="mt-4">
+        <HypothesisNote id={4}>
+          {algoName}로 같은 입력을 {DIST_RUNS.toLocaleString()}번 섞었더니 R ≥ 0.5인 결과가{' '}
+          <b className="font-mono text-ink">{fmtPct(stats.highR)}</b> 나왔어요. 이번 한 번의 결과는{' '}
+          <b className="font-mono text-ink">R = {fmtNum(Math.abs(currentTau))}</b>이에요. 원소 수를 바꾸거나 알고리즘을
+          바꿔 이 비율이 어떻게 달라지는지 확인해요.
+        </HypothesisNote>
       </div>
     </Card>
   )

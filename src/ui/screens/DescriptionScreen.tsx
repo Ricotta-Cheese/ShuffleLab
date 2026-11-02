@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router'
 import { description } from '../../content/description'
+import { hypotheses } from '../../content/hypotheses'
 import { Card, CardHeader, PageHeader } from '../components/ui'
 
 function LinkCard({ label, href, hint }: { label: string; href: string; hint: string }) {
@@ -24,12 +27,51 @@ function LinkCard({ label, href, hint }: { label: string; href: string; hint: st
   )
 }
 
+function Hypotheses({ active }: { active: string }) {
+  return (
+    <section id="hypotheses" className="scroll-mt-24">
+      <h3 className="text-sm font-semibold">연구 가설</h3>
+      <p className="mt-1 text-xs text-ink-3">
+        각 가설은 해당 화면에서 직접 실험해 확인해요. 화면마다 지금 돌린 결과가 가설과 어떻게 연결되는지 보여줘요.
+      </p>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {hypotheses.map((h) => (
+          <div
+            key={h.id}
+            id={`h${h.id}`}
+            className={`flex scroll-mt-24 flex-col rounded-xl border bg-surface p-4 transition-colors ${
+              active === `#h${h.id}` ? 'border-focus ring-1 ring-focus' : 'border-line'
+            }`}
+          >
+            <p className="font-semibold">
+              <span className="mr-1.5 font-mono text-ink-3">H{h.id}</span>
+              {h.question}
+            </p>
+            <p className="mt-1 text-sm leading-relaxed text-ink-2">{h.statement}</p>
+            <p className="mt-3 text-xs text-ink-3">비교: {h.compare}</p>
+            <Link to={h.path} className="mt-auto pt-3 text-sm text-link hover:underline">
+              {h.screenName}에서 확인하기 →
+            </Link>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function DescriptionScreen() {
   const { title, subtitle, motivation, questions, links } = description
+  const { hash } = useLocation()
+
+  // 다른 화면의 가설 칩에서 #h1 같은 주소로 들어오면 그 카드로 스크롤한다
+  useEffect(() => {
+    if (!hash) return
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash])
 
   return (
     <div className="space-y-8">
-      <PageHeader eyebrow="Shuffle Lab" title={title} desc={subtitle} />
+      <PageHeader eyebrow="A · 프로젝트 소개" title={title} desc={subtitle} />
 
       <Card>
         <CardHeader title="이 주제를 고른 이유" />
@@ -53,6 +95,8 @@ export default function DescriptionScreen() {
           ))}
         </div>
       </section>
+
+      <Hypotheses active={hash} />
 
       <section>
         <h3 className="text-sm font-semibold">링크</h3>

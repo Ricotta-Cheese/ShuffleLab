@@ -8,8 +8,9 @@ import AlgorithmPicker from '../components/AlgorithmPicker'
 import ArrayStage from '../components/ArrayStage'
 import Metric from '../components/Metric'
 import Pseudocode from '../components/Pseudocode'
+import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Card, CardHeader, IntInput, PageHeader, Segmented, Select } from '../components/ui'
+import { Button, Card, CardHeader, IntInput, Segmented, Select } from '../components/ui'
 import { fmtNum } from '../format'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
@@ -62,8 +63,7 @@ export default function VisualizeScreen() {
 
   return (
     <div className="space-y-5">
-      <PageHeader
-        eyebrow="C · 동작 시각화"
+      <ScreenHeader id="visualize"
         title="단계별 동작 시각화"
         desc={`원소 ${MIN_N}~${MAX_N}개로 셔플 과정을 한 단계씩 따라간다. 같은 시드는 항상 같은 과정을 재현한다.`}
       />
@@ -143,7 +143,7 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-4">
         <Card>
           <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-3">
