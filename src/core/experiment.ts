@@ -27,10 +27,10 @@ export function countPermutations(
     const out = algo.shuffle(base.slice(), rng)
     seen.fill(0)
     for (const v of out) {
-      if (seen[v]) throw new Error(`${algo.name}: 결과에 중복 원소가 있다`)
+      if (seen[v]) throw new Error(`${algo.name}: 결과에 중복 원소가 있어요`)
       seen[v] = 1
     }
-    if (out.length !== n) throw new Error(`${algo.name}: 결과 길이가 다르다`)
+    if (out.length !== n) throw new Error(`${algo.name}: 결과 길이가 달라요`)
     counts[permutationRank(out)]++
     if (onProgress && t % progressEvery === 0) onProgress(t)
   }

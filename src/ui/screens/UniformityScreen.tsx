@@ -150,7 +150,7 @@ export default function UniformityScreen() {
     <div className="space-y-5">
       <ScreenHeader id="uniformity"
         title="반복 실험 및 균등성 분석"
-        desc="같은 알고리즘을 여러 번 실행해 순열별 발생 확률을 측정하고, 모든 순열이 1/n! 확률로 나오는 균등분포와의 차이를 TVD로 잰다."
+        desc="같은 알고리즘을 여러 번 실행해 순열별 발생 확률을 측정하고, 모든 순열이 1/n! 확률로 나오는 균등분포와의 차이를 TVD로 재요."
       />
 
       <Card className="space-y-4">
@@ -167,7 +167,7 @@ export default function UniformityScreen() {
         <div>
           <InputArrayPicker value={values} onChange={setValues} minN={3} maxN={5} />
           <p className="mt-1 text-xs text-ink-3">
-            순열은 원소 값이 아니라 위치 기준으로 센다. 입력 값은 그래프의 순열 이름에만 쓰이고 결과 분포에는 영향이 없다.
+            순열은 원소 값이 아니라 위치 기준으로 세요. 입력 값은 그래프의 순열 이름에만 쓰이고 결과 분포에는 영향이 없어요.
           </p>
         </div>
 
@@ -198,7 +198,7 @@ export default function UniformityScreen() {
 
       {!config ? (
         <p className="rounded-xl border border-dashed border-line-strong p-6 text-sm text-ink-3">
-          조건을 고르고 "실험 시작"을 누른다. 실험은 별도 스레드(Web Worker)에서 돌아가 화면이 멈추지 않는다.
+          조건을 고르고 "실험 시작"을 누르거나 위의 추천 실험을 골라요. 실험은 별도 스레드(Web Worker)에서 돌아가 화면이 멈추지 않아요.
         </p>
       ) : (
         <>
@@ -357,17 +357,17 @@ export default function UniformityScreen() {
         <ul className="list-disc space-y-1 pl-5">
           <li>
             TVD = ½ Σ|P(π) − 1/n!|, U = 1 − TVD. U는 이 프로젝트에서 정의한 표시용 지수이며 셔플 품질의 절대 점수가
-            아니다.
+            아니에요.
           </li>
           <li>
-            실행 횟수가 유한하면 균등한 알고리즘도 TVD가 0이 되지 않는다. 같은 조건의 Fisher–Yates 결과를 표본 잡음의
-            기준으로 함께 보고, 반복 횟수를 늘려 차이가 줄어드는지 확인한다.
+            실행 횟수가 유한하면 균등한 알고리즘도 TVD가 0이 되지 않아요. 같은 조건의 Fisher–Yates 결과를 표본 잡음의
+            기준으로 함께 보고, 반복 횟수를 늘려 차이가 줄어드는지 확인해요.
           </li>
           <li>
-            "이론 TVD"는 실험이 아니라 가능한 모든 난수 경로를 열거해 계산한 값이다. Random-Key Sort는 키가 모두 다르다는
-            가정의 이론값이다.
+            "이론 TVD"는 실험이 아니라 가능한 모든 난수 경로를 열거해 계산한 값이에요. Random-Key Sort는 키가 모두
+            다르다는 가정의 이론값이에요.
           </li>
-          <li>이 실험은 통계적 균등성을 관찰하는 것이며, 난수 생성기의 암호학적 안전성을 검증하지 않는다.</li>
+          <li>이 실험은 통계적 균등성을 관찰하는 것이고, 난수 생성기의 암호학적 안전성을 검증하지 않아요.</li>
         </ul>
       </Callout>
     </div>
@@ -398,10 +398,10 @@ function H1Note({
       {ready ? (
         <>
           둘 다 O(n)인 두 알고리즘을 같은 조건(n = {config.n}, {fmtInt(config.trials)}회)에서 돌린 결과예요. 관측
-          TVD는 Fisher–Yates <b className="font-mono text-ink">{fmtNum(fy.stats!.tvd, 4)}</b>, Naive Random Swap{' '}
-          <b className="font-mono text-ink">{fmtNum(naive.stats!.tvd, 4)}</b>이고, 모든 경로를 열거한 이론 TVD는 각각{' '}
+          TVD: Fisher–Yates <b className="font-mono text-ink">{fmtNum(fy.stats!.tvd, 4)}</b>, Naive Random Swap{' '}
+          <b className="font-mono text-ink">{fmtNum(naive.stats!.tvd, 4)}</b>. 모든 경로를 열거한 이론 TVD: 각각{' '}
           <span className="font-mono">{fmtNum(fy.theoryTvd, 4)}</span>,{' '}
-          <span className="font-mono">{fmtNum(naive.theoryTvd, 4)}</span>예요. 반복 횟수를 늘리면 관측값이 이론값에 얼마나
+          <span className="font-mono">{fmtNum(naive.theoryTvd, 4)}</span>. 반복 횟수를 늘리면 관측값이 이론값에 얼마나
           가까워지는지도 확인해요.
         </>
       ) : (

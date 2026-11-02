@@ -14,11 +14,11 @@ export function parseCustom(text: string, minN: number, maxN: number): { values?
     .map((s) => s.trim())
     .filter(Boolean)
   if (values.length < minN || values.length > maxN) {
-    return { error: `원소는 ${minN}~${maxN}개여야 한다 (현재 ${values.length}개)` }
+    return { error: `원소는 ${minN}~${maxN}개여야 해요 (현재 ${values.length}개)` }
   }
   const dup = values.find((v, i) => values.indexOf(v) !== i)
   if (dup !== undefined) {
-    return { error: `중복 원소 "${dup}"가 있다. 관계성·균등성 지표는 서로 다른 원소로만 계산한다.` }
+    return { error: `중복 원소 "${dup}"가 있어요. 관계성·균등성 지표는 서로 다른 원소로만 계산해요.` }
   }
   return { values }
 }

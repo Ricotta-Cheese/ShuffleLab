@@ -64,7 +64,7 @@ export default function AlgorithmsScreen() {
       <div className="space-y-4">
         <ScreenHeader id="algorithms"
           title="알고리즘 비교"
-          desc='네 알고리즘은 모두 "배열을 무작위 순서로 섞는다"는 같은 문제를 푼다. 복잡도와 균등성을 한눈에 비교한다.'
+          desc='네 알고리즘은 모두 "배열을 무작위 순서로 섞는다"는 같은 문제를 풀어요. 복잡도와 균등성을 한눈에 비교해요.'
         />
         <ComparisonTable />
       </div>

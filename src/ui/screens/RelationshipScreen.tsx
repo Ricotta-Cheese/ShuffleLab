@@ -42,7 +42,7 @@ export default function RelationshipScreen() {
     <div className="space-y-5">
       <ScreenHeader id="relationship"
         title="관계성 분석"
-        desc="한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 측정한다. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 센다."
+        desc="한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 재요. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 세요."
       />
 
       <Card className="space-y-4">
@@ -73,20 +73,20 @@ export default function RelationshipScreen() {
             τ = (C − D) / (C + D) = ({rel.concordant} − {rel.discordant}) / {rel.concordant + rel.discordant}
           </p>
           <p className="mt-3 text-xs leading-relaxed text-ink-3">
-            τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서, 0은 일치·불일치 쌍이 같은 수다. R은 원본 순서와의
-            관계를 나타낼 뿐 무작위성 점수가 아니다. R = 0이어도 무작위라는 뜻은 아니고, R = 1에는 원본과 같은 경우와
-            완전히 반대인 경우가 모두 포함된다.
+            τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서, 0은 일치·불일치 쌍이 같은 수예요. R은 원본 순서와의
+            관계를 나타낼 뿐 무작위성 점수가 아니에요. R = 0이어도 무작위라는 뜻은 아니고, R = 1에는 원본과 같은
+            경우와 완전히 반대인 경우가 모두 포함돼요.
           </p>
         </Card>
 
         <Card>
-          <CardHeader title="원소별 위치 이동" desc="위 줄은 원본, 아래 줄은 결과다. 선은 같은 원소를 잇는다." />
+          <CardHeader title="원소별 위치 이동" desc="위 줄은 원본, 아래 줄은 결과예요. 선은 같은 원소를 이어요." />
           <MovementDiagram values={values} shuffled={shuffled} newPos={newPos} algoId={id} />
         </Card>
       </div>
 
       <HypothesisNote id={3}>
-        이번 결과는 <b className="font-mono text-ink">R = {fmtNum(rel.r)}</b> ({algo.name})예요. R은 원본 순서와 얼마나
+        {algo.name} · 이번 결과 <b className="font-mono text-ink">R = {fmtNum(rel.r)}</b>. R은 원본 순서와 얼마나
         닮았는지만 재고, 모든 순열이 공평하게 나오는지는 알려주지 않아요. 알고리즘을 Naive Random Swap(비균등)으로
         바꿔 R을 비교해 보고, 균등성은{' '}
         <Link to="/uniformity" className="text-link hover:underline">
@@ -104,7 +104,7 @@ export default function RelationshipScreen() {
             <PairGrid values={values} newPos={newPos} />
           ) : (
             <p className="text-sm text-ink-3">
-              원소가 {PAIR_GRID_MAX}개 이하일 때 표시한다 (현재 쌍 {rel.concordant + rel.discordant}개).
+              원소가 {PAIR_GRID_MAX}개 이하일 때 보여줘요 (현재 쌍 {rel.concordant + rel.discordant}개).
             </p>
           )}
         </Card>
@@ -268,7 +268,7 @@ function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
         </table>
       </div>
       <p className="text-xs text-ink-3">
-        행의 원소가 원본에서 열의 원소보다 앞에 있다. 결과에서도 앞에 있으면 ✓, 뒤로 가면 ✗이다.
+        행의 원소가 원본에서 열의 원소보다 앞에 있어요. 결과에서도 앞에 있으면 ✓, 뒤로 가면 ✗예요.
       </p>
     </div>
   )
@@ -328,7 +328,7 @@ function TauDistribution({
     <Card>
       <CardHeader
         title={`같은 입력을 ${DIST_RUNS.toLocaleString()}번 섞었을 때 τ의 분포 · ${algoName}`}
-        desc="한 번의 결과만으로는 셔플의 품질을 판단할 수 없다. 올바른 셔플에서도 τ가 큰 결과가 일정 비율로 나온다."
+        desc="한 번의 결과만으로는 셔플의 품질을 판단할 수 없어요. 같은 입력을 여러 번 섞으면 τ가 어떻게 퍼지는지 볼 수 있어요."
       />
       <div className="grid gap-4 md:grid-cols-[1fr_200px]">
         <div className="h-56">
@@ -369,9 +369,9 @@ function TauDistribution({
       </div>
       <div className="mt-4">
         <HypothesisNote id={4}>
-          {algoName}로 같은 입력을 {DIST_RUNS.toLocaleString()}번 섞었더니 R ≥ 0.5인 결과가{' '}
-          <b className="font-mono text-ink">{fmtPct(stats.highR)}</b> 나왔어요. 이번 한 번의 결과는{' '}
-          <b className="font-mono text-ink">R = {fmtNum(Math.abs(currentTau))}</b>이에요. 원소 수를 바꾸거나 알고리즘을
+          같은 입력을 {algoName} 알고리즘으로 {DIST_RUNS.toLocaleString()}번 섞었더니 R ≥ 0.5인 결과가{' '}
+          <b className="font-mono text-ink">{fmtPct(stats.highR)}</b> 나왔어요 (이번 한 번의 결과:{' '}
+          <b className="font-mono text-ink">R = {fmtNum(Math.abs(currentTau))}</b>). 원소 수를 바꾸거나 알고리즘을
           바꿔 이 비율이 어떻게 달라지는지 확인해요.
         </HypothesisNote>
       </div>

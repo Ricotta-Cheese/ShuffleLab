@@ -65,7 +65,7 @@ export default function VisualizeScreen() {
     <div className="space-y-5">
       <ScreenHeader id="visualize"
         title="단계별 동작 시각화"
-        desc={`원소 ${MIN_N}~${MAX_N}개로 셔플 과정을 한 단계씩 따라간다. 같은 시드는 항상 같은 과정을 재현한다.`}
+        desc={`원소 ${MIN_N}~${MAX_N}개로 셔플 과정을 한 단계씩 따라가요. 같은 시드는 항상 같은 과정을 재현해요.`}
       />
 
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -234,9 +234,9 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
             <Metric label="순서 뒤집힌 쌍 D" value={String(rel.discordant)} />
           </div>
           <p className="mt-3 text-xs leading-relaxed text-ink-3">
-            τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서다. R은 원본 순서와의 관계를 나타낼 뿐 무작위성 점수가
-            아니다.
-            {isPickRemove && ' 이 알고리즘은 중간 단계에서 "결과 배열 뒤에 남은 배열을 이어 붙인 배치"로 계산한다.'}
+            τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서예요. R은 원본 순서와의 관계를 나타낼 뿐 무작위성 점수가
+            아니에요.
+            {isPickRemove && ' 이 알고리즘은 중간 단계에서 "결과 배열 뒤에 남은 배열을 이어 붙인 배치"로 계산해요.'}
           </p>
         </Card>
 

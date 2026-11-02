@@ -76,7 +76,7 @@ export default function InputArrayPicker({
             }`}
           />
           <p id="input-array-help" className={`mt-1 text-xs ${error ? 'text-bad' : 'text-ink-3'}`}>
-            {error ?? `쉼표나 공백으로 구분해 서로 다른 원소 ${minN}~${maxN}개를 입력한다. 숫자가 아니어도 된다.`}
+            {error ?? `쉼표나 공백으로 구분해 서로 다른 원소 ${minN}~${maxN}개를 입력해요. 숫자가 아니어도 돼요.`}
           </p>
         </div>
       )}

@@ -30,7 +30,7 @@ export function traceRandomKey<T>(input: readonly T[], rng: Rng): Trace<T> {
     keys,
     fixed: [],
     what: `초기 배열 (n=${n})`,
-    why: '원소마다 [0, 1) 범위의 무작위 키를 붙인 뒤, 키 순서대로 정렬하면 섞인 배열이 된다.',
+    why: '원소마다 [0, 1) 범위의 무작위 키를 붙인 뒤, 키 순서대로 정렬하면 섞인 배열이 돼요.',
   })
 
   for (let i = 0; i < n; i++) {
@@ -45,7 +45,7 @@ export function traceRandomKey<T>(input: readonly T[], rng: Rng): Trace<T> {
       i,
       fixed: [],
       what: `값 ${fmt(input[i])}에 키 ${fmtKey(keys[i]!)} 부여`,
-      why: '각 키는 다른 키와 독립적으로 뽑는다. 원래 위치와 무관한 키를 쓰므로 정렬 후 순서는 원래 순서와 관계가 없다.',
+      why: '각 키는 다른 키와 독립적으로 뽑아요. 원래 위치와 무관한 키를 쓰므로 정렬 후 순서는 원래 순서와 관계가 없어요.',
     })
   }
 
@@ -69,8 +69,8 @@ export function traceRandomKey<T>(input: readonly T[], rng: Rng): Trace<T> {
     what: `키 오름차순으로 정렬 (비교 ${c.comparisons}회)`,
     why:
       ties === 0
-        ? '키가 모두 다르므로 키의 크기 순위가 곧 새 순서가 된다. 독립적인 키의 순위는 모든 순열이 같은 확률로 나온다.'
-        : `같은 키가 ${ties}쌍 있다. 안정 정렬은 같은 키끼리 원래 순서를 유지하므로 이 부분에서 균등성이 깨진다.`,
+        ? '키가 모두 다르므로 키의 크기 순위가 곧 새 순서가 돼요. 독립적인 키의 순위는 모든 순열이 같은 확률로 나와요.'
+        : `같은 키가 ${ties}쌍 있어요. 안정 정렬은 같은 키끼리 원래 순서를 유지하므로 이 부분에서 균등성이 깨져요.`,
   })
 
   rec.push({
@@ -79,7 +79,7 @@ export function traceRandomKey<T>(input: readonly T[], rng: Rng): Trace<T> {
     keys: sortedKeys,
     fixed: range(0, n),
     what: '셔플 완료',
-    why: `비교 정렬을 쓰므로 시간은 O(n log n)이고, 키와 정렬용 배열에 O(n) 추가 공간이 든다.`,
+    why: `비교 정렬을 쓰므로 시간은 O(n log n)이고, 키와 정렬용 배열에 O(n) 추가 공간이 들어요.`,
   })
 
   return rec.finish(result)
