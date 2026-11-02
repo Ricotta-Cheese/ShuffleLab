@@ -1,5 +1,10 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 
+type Box = { x: number; y: number; w: number; h: number }
+
+const sameBox = (a: Box | null, b: Box | null) =>
+  a === b || (!!a && !!b && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h)
+
 /**
  * 탭·버튼 묶음에서 선택 표시(배경 알약)가 선택한 칸으로 미끄러져 가게 한다.
  * 묶음 상자에 ref를 달고(position: relative), 선택한 칸에 data-active를 붙이면
@@ -7,26 +12,37 @@ import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
  */
 export function useSlider<T extends HTMLElement>(activeKey: unknown) {
   const ref = useRef<T>(null)
-  const [box, setBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
+  const [box, setBox] = useState<Box | null>(null)
   const [ready, setReady] = useState(false)
+  const measureRef = useRef<() => void>(() => {})
+  const mounted = useRef(false)
 
+  // 관찰자는 한 번만 만든다. 위치가 그대로면 상태를 바꾸지 않아 다시 그리지 않는다.
   useLayoutEffect(() => {
     const root = ref.current
     if (!root) return
     const measure = () => {
       const el = root.querySelector<HTMLElement>('[data-active="true"]')
-      setBox(el ? { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight } : null)
+      const next = el ? { x: el.offsetLeft, y: el.offsetTop, w: el.offsetWidth, h: el.offsetHeight } : null
+      setBox((prev) => (sameBox(prev, next) ? prev : next))
     }
+    measureRef.current = measure
     measure()
     // 글꼴이 늦게 불러와지거나 창 폭이 바뀌면 칸 크기가 달라지므로 다시 잰다
     const ro = new ResizeObserver(measure)
     ro.observe(root)
     for (const child of root.children) ro.observe(child)
-    const id = requestAnimationFrame(() => setReady(true))
-    return () => {
-      ro.disconnect()
-      cancelAnimationFrame(id)
+    return () => ro.disconnect()
+  }, [])
+
+  // 선택이 바뀌면 그리기 전에 다시 잰다. 처음 자리는 그냥 놓고, 첫 변경부터 움직임을 켠다.
+  useLayoutEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
     }
+    setReady(true)
+    measureRef.current()
   }, [activeKey])
 
   const style: CSSProperties = box
