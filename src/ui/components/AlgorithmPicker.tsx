@@ -15,7 +15,7 @@ export default function AlgorithmPicker({
           role="tab"
           aria-selected={a.id === value}
           onClick={() => onChange(a.id)}
-          className={`rounded-md px-3 py-1.5 text-sm whitespace-nowrap ${
+          className={`rounded-md px-2 py-1.5 text-sm leading-tight md:px-3 md:whitespace-nowrap ${
             a.id === value ? 'bg-white font-semibold shadow-sm' : 'text-slate-600 hover:text-slate-900'
           }`}
         >

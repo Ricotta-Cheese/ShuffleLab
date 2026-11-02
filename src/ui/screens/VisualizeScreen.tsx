@@ -6,6 +6,8 @@ import { kendall } from '../../core/stats/kendall'
 import { algorithmContent } from '../../content/algorithms'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import ArrayStage from '../components/ArrayStage'
+import Metric from '../components/Metric'
+import { fmtNum } from '../format'
 import Pseudocode from '../components/Pseudocode'
 import UniformBadge from '../components/UniformBadge'
 import { useAlgorithmParam } from '../useAlgorithmParam'
@@ -262,17 +264,6 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
           </div>
         </section>
       </aside>
-    </div>
-  )
-}
-
-const fmtNum = (v: number) => (Number.isNaN(v) ? '—' : v.toFixed(3))
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md bg-slate-50 px-3 py-2">
-      <div className="text-[11px] text-slate-500">{label}</div>
-      <div className="font-mono text-lg font-semibold">{value}</div>
     </div>
   )
 }
