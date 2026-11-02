@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { NavLink, Navigate, Route, Routes } from 'react-router'
 import { screens } from './ui/screens'
 
@@ -25,12 +26,14 @@ export default function App() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
-        <Routes>
-          <Route path="/" element={<Navigate to={screens[0].path} replace />} />
-          {screens.map((s) => (
-            <Route key={s.path} path={s.path} element={<s.Component />} />
-          ))}
-        </Routes>
+        <Suspense fallback={<p className="text-sm text-slate-400">불러오는 중…</p>}>
+          <Routes>
+            <Route path="/" element={<Navigate to={screens[0].path} replace />} />
+            {screens.map((s) => (
+              <Route key={s.path} path={s.path} element={<s.Component />} />
+            ))}
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

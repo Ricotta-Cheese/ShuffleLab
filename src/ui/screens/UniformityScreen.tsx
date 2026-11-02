@@ -16,6 +16,7 @@ import type { RngKind } from '../../core/rng'
 import { exactDistribution } from '../../core/stats/exact'
 import { permutationRank, permutationUnrank } from '../../core/stats/permutation'
 import { toProbabilities, totalVariation, uniformity } from '../../core/stats/tvd'
+import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
 import InputArrayPicker from '../components/InputArrayPicker'
 import UniformBadge from '../components/UniformBadge'
 import { chart } from '../chartTheme'
@@ -52,10 +53,6 @@ export default function UniformityScreen() {
   const [seed, setSeed] = useState(1)
   const [runValues, setRunValues] = useState<string[]>([])
   const { config, runs, running, start, cancel } = useExperiment()
-
-  const toggle = (id: AlgorithmId) =>
-    // 화면 표시 순서를 알고리즘 목록 순서로 유지한다
-    setSelected((s) => algorithms.map((a) => a.id).filter((x) => (x === id ? !s.includes(id) : s.includes(x))))
 
   const run = () => {
     setRunValues(values)
@@ -106,20 +103,7 @@ export default function UniformityScreen() {
       </section>
 
       <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
-        <div className="flex flex-wrap gap-2 text-sm">
-          <span className="mr-1 font-medium">알고리즘</span>
-          {algorithms.map((a) => (
-            <label
-              key={a.id}
-              className={`flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 ${
-                selected.includes(a.id) ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white'
-              }`}
-            >
-              <input type="checkbox" className="sr-only" checked={selected.includes(a.id)} onChange={() => toggle(a.id)} />
-              {a.name}
-            </label>
-          ))}
-        </div>
+        <AlgorithmMultiPicker value={selected} onChange={setSelected} />
 
         <InputArrayPicker value={values} onChange={setValues} minN={3} maxN={5} />
         <p className="-mt-2 text-xs text-slate-500">

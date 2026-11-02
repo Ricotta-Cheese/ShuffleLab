@@ -1,20 +1,11 @@
-import type { ComponentType } from 'react'
-import Placeholder from '../components/Placeholder'
-import AlgorithmsScreen from './AlgorithmsScreen'
-import DescriptionScreen from './DescriptionScreen'
-import RelationshipScreen from './RelationshipScreen'
-import UniformityScreen from './UniformityScreen'
-import VisualizeScreen from './VisualizeScreen'
+import { lazy, type ComponentType } from 'react'
 
+// 화면별로 나눠 불러온다. 차트 라이브러리는 D·E·F 화면을 열 때만 내려받는다.
 export const screens: { path: string; label: string; Component: ComponentType }[] = [
-  { path: '/description', label: 'A. 설명', Component: DescriptionScreen },
-  { path: '/algorithms', label: 'B. 알고리즘', Component: AlgorithmsScreen },
-  { path: '/visualize', label: 'C. 동작 시각화', Component: VisualizeScreen },
-  { path: '/relationship', label: 'D. 관계성', Component: RelationshipScreen },
-  { path: '/uniformity', label: 'E. 균등성', Component: UniformityScreen },
-  {
-    path: '/performance',
-    label: 'F. 성능',
-    Component: () => <Placeholder title="성능 비교" desc="입력 크기별 실행 시간" />,
-  },
+  { path: '/description', label: 'A. 설명', Component: lazy(() => import('./DescriptionScreen')) },
+  { path: '/algorithms', label: 'B. 알고리즘', Component: lazy(() => import('./AlgorithmsScreen')) },
+  { path: '/visualize', label: 'C. 동작 시각화', Component: lazy(() => import('./VisualizeScreen')) },
+  { path: '/relationship', label: 'D. 관계성', Component: lazy(() => import('./RelationshipScreen')) },
+  { path: '/uniformity', label: 'E. 균등성', Component: lazy(() => import('./UniformityScreen')) },
+  { path: '/performance', label: 'F. 성능', Component: lazy(() => import('./PerformanceScreen')) },
 ]
