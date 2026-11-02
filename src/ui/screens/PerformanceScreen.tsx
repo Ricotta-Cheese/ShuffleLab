@@ -15,6 +15,38 @@ const MIN_EXP = 8
 const MAX_EXP_OPTIONS = [14, 16, 18, 20]
 const SAMPLE_OPTIONS = [5, 9, 15]
 const BUDGET_MS = 200
+
+interface Preset {
+  label: string
+  desc: string
+  algoIds: AlgorithmId[]
+  maxExp: number
+  samples: number
+}
+
+const PRESETS: Preset[] = [
+  {
+    label: 'H2 확인 · FY vs Pick & Remove',
+    desc: '최대 2^16, 9회 측정 중앙값',
+    algoIds: ['fisher-yates', 'pick-remove'],
+    maxExp: 16,
+    samples: 9,
+  },
+  {
+    label: '빠른 확인 (최대 2^14)',
+    desc: '4종, 최대 2^14, 5회 측정 중앙값',
+    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    maxExp: 14,
+    samples: 5,
+  },
+  {
+    label: '전체 비교 (최대 2^18)',
+    desc: '4종, 최대 2^18, 9회 측정 중앙값',
+    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    maxExp: 18,
+    samples: 9,
+  },
+]
 const RNG_OPTIONS: { kind: RngKind; label: string }[] = [
   { kind: 'seeded', label: '시드 고정 (SFC32)' },
   { kind: 'math', label: 'Math.random' },
@@ -82,6 +114,22 @@ export default function PerformanceScreen() {
       budgetMs: BUDGET_MS,
     })
 
+  // 추천 설정: 조건을 화면에 채우고 바로 측정한다
+  const runPreset = (p: Preset) => {
+    setSelected(p.algoIds)
+    setMaxExp(p.maxExp)
+    setSamples(p.samples)
+    setRngKind('seeded')
+    bench.start({
+      algoIds: p.algoIds,
+      sizes: powerOfTwoSizes(MIN_EXP, p.maxExp),
+      samples: p.samples,
+      rngKind: 'seeded',
+      seed: 1,
+      budgetMs: BUDGET_MS,
+    })
+  }
+
   const cfg = bench.config
   const byAlgo = (cfg?.algoIds ?? []).map((id) => ({
     id,
@@ -96,7 +144,19 @@ export default function PerformanceScreen() {
         desc="배열 크기를 두 배씩 늘리면서 셔플 1회의 실행 시간을 잰다. 크기가 두 배가 될 때 시간이 몇 배가 되는지 보면 시간 복잡도의 증가 추세를 실제로 확인할 수 있다."
       />
 
+      <Callout tone="warn" title="측정하는 동안 이 탭을 화면에 띄워 두세요">
+        브라우저는 다른 탭이나 최소화된 창을 느리게 실행해요. 측정 중에 탭을 바꾸면 시간이 실제보다 크게 나올 수 있어요.
+      </Callout>
+
       <Card className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-4 text-sm">
+          <span className="mr-1 text-ink-2">추천 설정</span>
+          {PRESETS.map((p) => (
+            <Button key={p.label} size="sm" disabled={running} onClick={() => runPreset(p)} title={p.desc}>
+              {p.label}
+            </Button>
+          ))}
+        </div>
         <AlgorithmMultiPicker value={selected} onChange={setSelected} />
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <Select
@@ -221,7 +281,6 @@ export default function PerformanceScreen() {
               워밍업으로 버린다.
             </li>
             <li>같은 조건을 여러 번 재서 중앙값을 쓴다. 화면 렌더링·애니메이션 시간은 포함하지 않는다.</li>
-            <li>측정하는 동안 탭을 화면에 띄워 둔다. 숨겨진 탭은 브라우저가 느리게 실행한다.</li>
             <li>
               절대 시간은 기기, 브라우저, 다른 작업에 따라 달라진다. 비교할 때는 같은 실행 안의 상대적인 차이와 증가
               비율을 본다.

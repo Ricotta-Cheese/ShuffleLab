@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
+import { factorial } from '../../core/algorithms/recorder'
 import { kendall, originalPositions } from '../../core/stats/kendall'
 import { Link } from 'react-router'
 import AlgorithmPicker from '../components/AlgorithmPicker'
@@ -58,12 +59,8 @@ export default function RelationshipScreen() {
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Card>
-          <CardHeader title="원소별 위치 이동" desc="위 줄은 원본, 아래 줄은 결과다. 선은 같은 원소를 잇는다." />
-          <MovementDiagram values={values} shuffled={shuffled} newPos={newPos} algoId={id} />
-        </Card>
-
+      {/* 결과 요약을 먼저 보여주고, 그 근거(위치 이동)를 옆에 둔다 */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
         <Card>
           <CardHeader title="이번 결과의 관계성" />
           <div className="grid grid-cols-2 gap-3">
@@ -81,6 +78,11 @@ export default function RelationshipScreen() {
             완전히 반대인 경우가 모두 포함된다.
           </p>
         </Card>
+
+        <Card>
+          <CardHeader title="원소별 위치 이동" desc="위 줄은 원본, 아래 줄은 결과다. 선은 같은 원소를 잇는다." />
+          <MovementDiagram values={values} shuffled={shuffled} newPos={newPos} algoId={id} />
+        </Card>
       </div>
 
       <HypothesisNote id={3}>
@@ -92,6 +94,8 @@ export default function RelationshipScreen() {
         </Link>
         에서 함께 확인해요.
       </HypothesisNote>
+
+      <RotationExample values={values} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Card>
@@ -371,6 +375,51 @@ function TauDistribution({
           바꿔 이 비율이 어떻게 달라지는지 확인해요.
         </HypothesisNote>
       </div>
+    </Card>
+  )
+}
+
+/**
+ * 가설 3 비교 사례: 매번 똑같이 k칸 회전시키는 가짜 셔플.
+ * k칸 회전하면 앞쪽 k개와 뒤쪽 n−k개 사이의 쌍만 순서가 뒤집히므로 D = k(n−k)이고, τ = 1 − 2D/P다.
+ * τ가 0에 가장 가까운 k를 고르면 관계성은 낮아 보이지만, 같은 입력에 늘 같은 결과만 내므로 균등과는 거리가 멀다.
+ */
+function RotationExample({ values }: { values: string[] }) {
+  const n = values.length
+  const pairs = (n * (n - 1)) / 2
+  let k = 1
+  for (let c = 1; c < n; c++) if (Math.abs(pairs - 2 * c * (n - c)) < Math.abs(pairs - 2 * k * (n - k))) k = c
+  const rotated = [...values.slice(k), ...values.slice(0, k)]
+  const rel = kendall(values, rotated)
+  const perms = factorial(n)
+  const u = 1 / perms
+  const fmtTiny = (v: number) => (v >= 1e-4 ? fmtNum(v, 4) : v.toExponential(2))
+
+  return (
+    <Card>
+      <CardHeader
+        title={`비교 사례 · 항상 ${k}칸 회전하는 "셔플"`}
+        desc="무작위성이 전혀 없는 규칙이에요. 이 규칙이 만든 결과도 관계성 지수로만 보면 원본과 관계가 낮아 보일 수 있어요."
+      />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="space-y-1 font-mono text-sm">
+          <p>
+            <span className="mr-2 font-sans text-xs text-ink-3">원본</span>[{values.join(', ')}]
+          </p>
+          <p>
+            <span className="mr-2 font-sans text-xs text-ink-3">결과</span>[{rotated.join(', ')}]
+          </p>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <Metric label="Kendall's τ" value={fmtNum(rel.tau)} />
+          <Metric label="관계성 지수 R" value={fmtNum(rel.r)} />
+          <Metric label="균등성 지수 U" value={fmtTiny(u)} hint={`가능한 ${perms.toLocaleString()}개 중 1개만 나옴`} />
+        </div>
+      </div>
+      <p className="mt-3 text-xs leading-relaxed text-ink-3">
+        같은 입력에는 항상 같은 결과가 나오므로 몇 번을 실행해도 순열 하나에만 확률 1이 몰려요. 그래서 TVD = 1 − 1/n!,
+        U = 1/n!로 실험 없이 정해져요. 관계성(R)과 균등성(U)을 따로 봐야 하는 이유예요.
+      </p>
     </Card>
   )
 }

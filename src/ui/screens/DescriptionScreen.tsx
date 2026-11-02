@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import { description } from '../../content/description'
 import { hypotheses } from '../../content/hypotheses'
+import { screenMeta } from '../../content/screens'
 import { Card, CardHeader, PageHeader } from '../components/ui'
 
 function LinkCard({ label, href, hint }: { label: string; href: string; hint: string }) {
@@ -24,6 +25,35 @@ function LinkCard({ label, href, hint }: { label: string; href: string; hint: st
     </a>
   ) : (
     <div className="rounded-xl border border-dashed border-line-strong p-4 text-ink-3">{body}</div>
+  )
+}
+
+/** 사이트 사용 순서: B~F 화면을 순서대로 안내한다 */
+function Tour() {
+  const steps = screenMeta.filter((s) => s.id !== 'description')
+  return (
+    <section>
+      <h3 className="text-sm font-semibold">이렇게 둘러보세요</h3>
+      <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {steps.map((s, k) => (
+          <li key={s.id}>
+            <Link
+              to={s.path}
+              className="flex h-full flex-col rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong hover:bg-surface-2"
+            >
+              <span className="flex items-center gap-2 text-xs text-ink-3">
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-surface-3 font-mono text-[11px] text-ink">
+                  {k + 1}
+                </span>
+                {s.letter} · {s.subtitle}
+              </span>
+              <span className="mt-2 font-semibold">{s.name}</span>
+              <span className="mt-1 text-xs leading-relaxed text-ink-2">{s.goals[0]}</span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
 
@@ -60,7 +90,7 @@ function Hypotheses({ active }: { active: string }) {
 }
 
 export default function DescriptionScreen() {
-  const { title, subtitle, motivation, questions, links } = description
+  const { title, subtitle, summary, motivation, questions, links } = description
   const { hash } = useLocation()
 
   // 다른 화면의 가설 칩에서 #h1 같은 주소로 들어오면 그 카드로 스크롤한다
@@ -72,6 +102,9 @@ export default function DescriptionScreen() {
   return (
     <div className="space-y-8">
       <PageHeader eyebrow="A · 프로젝트 소개" title={title} desc={subtitle} />
+      <p className="-mt-4 max-w-3xl leading-relaxed text-ink-2">{summary}</p>
+
+      <Tour />
 
       <Card>
         <CardHeader title="이 주제를 고른 이유" />

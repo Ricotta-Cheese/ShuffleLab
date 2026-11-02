@@ -4,6 +4,7 @@ import { algorithms, getAlgorithm } from '../../core/algorithms'
 import { algorithmContent } from '../../content/algorithms'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import Pseudocode from '../components/Pseudocode'
+import PseudocodeCompare from '../components/PseudocodeCompare'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
 import { Card, Table, tbody, td, th, thead } from '../components/ui'
@@ -67,6 +68,8 @@ export default function AlgorithmsScreen() {
         />
         <ComparisonTable />
       </div>
+
+      <PseudocodeCompare />
 
       <section className="space-y-4">
         <AlgorithmPicker value={id} onChange={setId} />

@@ -21,10 +21,42 @@ import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Callout, Card, CardHeader, IntInput, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, IntInput, Progress, Segmented, Select, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt, fmtNum, fmtPct } from '../format'
 import { useExperiment } from '../useExperiment'
+
+interface Preset {
+  label: string
+  desc: string
+  algoIds: AlgorithmId[]
+  n: number
+  trials: number
+}
+
+const PRESETS: Preset[] = [
+  {
+    label: 'H1 확인 · FY vs Naive',
+    desc: 'n = 3, 100,000회, 시드 1',
+    algoIds: ['fisher-yates', 'naive-swap'],
+    n: 3,
+    trials: 100_000,
+  },
+  {
+    label: '반복이 적을 때 (1,000회)',
+    desc: '4종, n = 3, 1,000회, 시드 1 — 균등한 알고리즘도 TVD가 0이 아닌 것을 확인',
+    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    n: 3,
+    trials: 1_000,
+  },
+  {
+    label: '전체 비교 (n = 4, 100만 회)',
+    desc: '4종, n = 4, 1,000,000회, 시드 1',
+    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    n: 4,
+    trials: 1_000_000,
+  },
+]
 
 const TRIAL_OPTIONS = [1_000, 10_000, 100_000, 1_000_000]
 const RNG_OPTIONS: { kind: RngKind; label: string }[] = [
@@ -57,9 +89,23 @@ export default function UniformityScreen() {
   const [runValues, setRunValues] = useState<string[]>([])
   const { config, runs, running, start, cancel } = useExperiment()
 
+  const [zoom, setZoom] = useState(false)
+
   const run = () => {
     setRunValues(values)
     start({ algoIds: selected, n: values.length, trials, rngKind, seed })
+  }
+
+  // 추천 실험: 조건을 화면에 채우고 바로 실행한다
+  const runPreset = (p: Preset) => {
+    const v = Array.from({ length: p.n }, (_, k) => String(k + 1))
+    setSelected(p.algoIds)
+    setValues(v)
+    setTrials(p.trials)
+    setRngKind('seeded')
+    setSeed(1)
+    setRunValues(v)
+    start({ algoIds: p.algoIds, n: p.n, trials: p.trials, rngKind: 'seeded', seed: 1 })
   }
 
   const n = config?.n ?? values.length
@@ -90,10 +136,15 @@ export default function UniformityScreen() {
       theoryTvd: totalVariation(theory[id], new Array(size).fill(1 / size)),
     }
   })
-  const yMax = Math.max(
-    1 / size,
-    ...results.flatMap((x) => [...(x.observed ?? []), ...theory[x.id]]),
-  )
+  const shown = [1 / size, ...results.flatMap((x) => [...(x.observed ?? []), ...theory[x.id]])]
+  const yMax = Math.max(...shown)
+  const yMin = Math.min(...shown)
+  // 확대하면 값이 있는 범위만 보여준다 (모든 차트가 같은 범위를 써서 서로 비교할 수 있게)
+  const pad = Math.max((yMax - yMin) * 0.15, yMax * 0.01)
+  const yDomain: [number, number] = zoom ? [Math.max(0, yMin - pad), yMax + pad] : [0, yMax * 1.1]
+  // 범위가 좁으면 눈금에 소수 자릿수를 늘려 같은 숫자가 반복되지 않게 한다
+  const span = yDomain[1] - yDomain[0]
+  const tickDigits = span < 0.01 ? 2 : span < 0.1 ? 1 : 0
 
   return (
     <div className="space-y-5">
@@ -103,6 +154,14 @@ export default function UniformityScreen() {
       />
 
       <Card className="space-y-4">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-4 text-sm">
+          <span className="mr-1 text-ink-2">추천 실험</span>
+          {PRESETS.map((p) => (
+            <Button key={p.label} size="sm" disabled={running} onClick={() => runPreset(p)} title={p.desc}>
+              {p.label}
+            </Button>
+          ))}
+        </div>
         <AlgorithmMultiPicker value={selected} onChange={setSelected} />
 
         <div>
@@ -190,7 +249,7 @@ export default function UniformityScreen() {
             </tbody>
           </Table>
 
-          <div className="flex flex-wrap gap-4 text-xs text-ink-2">
+          <div className="flex flex-wrap items-center gap-4 text-xs text-ink-2">
             <LegendItem
               swatch={
                 <span className="flex gap-0.5">
@@ -208,6 +267,19 @@ export default function UniformityScreen() {
             <LegendItem swatch={<span className="inline-block w-4 border-t-2 border-dashed" style={{ borderColor: chart.reference }} />}>
               균등 확률 1/n!
             </LegendItem>
+            <span className="ml-auto flex items-center gap-2">
+              세로축
+              <Segmented
+                ariaLabel="세로축 범위"
+                size="sm"
+                value={zoom ? 'zoom' : 'zero'}
+                onChange={(v) => setZoom(v === 'zoom')}
+                options={[
+                  { value: 'zero', label: '0부터' },
+                  { value: 'zoom', label: '확대' },
+                ]}
+              />
+            </span>
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -219,6 +291,13 @@ export default function UniformityScreen() {
                       <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: algoColor[id] }} />
                       {algo.name}
                     </span>
+                  }
+                  right={
+                    zoom && (
+                      <span className="rounded bg-warn-soft px-1.5 py-0.5 text-[11px] font-medium text-warn">
+                        세로축 확대 · 0에서 시작하지 않아요
+                      </span>
+                    )
                   }
                 />
                 <div className="h-56">
@@ -239,8 +318,9 @@ export default function UniformityScreen() {
                         height={n === 4 ? 40 : 24}
                       />
                       <YAxis
-                        domain={[0, yMax * 1.1]}
-                        tickFormatter={(v: number) => fmtPct(v, 0)}
+                        domain={yDomain}
+                        allowDataOverflow
+                        tickFormatter={(v: number) => fmtPct(v, tickDigits)}
                         tick={{ fontSize: 10, fill: chart.axis }}
                         tickLine={false}
                         axisLine={false}

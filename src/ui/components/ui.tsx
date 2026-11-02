@@ -60,15 +60,18 @@ export function Select<V extends string | number>({
   value,
   onChange,
   options,
+  hideLabel,
 }: {
   label: string
   value: V
   onChange: (v: V) => void
   options: { value: V; label: string }[]
+  /** 이름을 화면에서 숨기고 스크린리더에만 알린다 */
+  hideLabel?: boolean
 }) {
   return (
     <label className="flex items-center gap-2 text-sm text-ink-2">
-      {label}
+      <span className={hideLabel ? 'sr-only' : undefined}>{label}</span>
       <select
         value={value}
         onChange={(e) => {

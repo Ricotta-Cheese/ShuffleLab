@@ -153,9 +153,27 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
             <Legend />
           </div>
           <ArrayStage step={step} n={initial.length} withOutput={isPickRemove} durationMs={Math.min(450, delay * 0.6)} />
+
+          {/* 단계 설명은 배열 바로 아래에 두어 시선이 멀리 움직이지 않게 한다 */}
+          <div className="mt-4 border-t border-line pt-4">
+            <div className="flex items-center gap-2 text-xs text-ink-3">
+              <span className="font-mono">
+                단계 {index} / {last}
+              </span>
+              <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono">{step.kind}</span>
+            </div>
+            <div aria-live="polite">
+              <p className="mt-2 font-semibold">{step.what}</p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-2">
+                <span className="font-medium text-ink">왜? </span>
+                {step.why}
+              </p>
+            </div>
+          </div>
         </Card>
 
-        <Card className="space-y-3">
+        {/* 모바일에서는 화면 아래에 붙어 있어서, 배열과 설명을 보면서 바로 조작할 수 있다 */}
+        <Card className="sticky bottom-2 z-10 space-y-3 shadow-lg shadow-black/20 lg:static lg:shadow-none">
           <input
             type="range"
             min={0}
@@ -166,19 +184,19 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
             className="w-full accent-[var(--ink-2)]"
           />
           <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={() => go(0)} aria-label="처음으로" title="처음으로">
+            <Button size="sm" onClick={() => go(0)} aria-label="처음으로" title="처음으로">
               ⏮
             </Button>
-            <Button onClick={() => go(index - 1)} aria-label="이전 단계" title="이전 단계" disabled={index === 0}>
+            <Button size="sm" onClick={() => go(index - 1)} aria-label="이전 단계" title="이전 단계" disabled={index === 0}>
               ◀ 이전
             </Button>
-            <Button variant="primary" onClick={togglePlay} className="min-w-20">
+            <Button size="sm" variant="primary" onClick={togglePlay} className="min-w-20">
               {playing ? '일시정지' : index >= last ? '다시 재생' : '재생'}
             </Button>
-            <Button onClick={() => go(index + 1)} aria-label="다음 단계" title="다음 단계" disabled={index === last}>
+            <Button size="sm" onClick={() => go(index + 1)} aria-label="다음 단계" title="다음 단계" disabled={index === last}>
               다음 ▶
             </Button>
-            <Button onClick={() => go(last)} aria-label="끝으로" title="끝으로">
+            <Button size="sm" onClick={() => go(last)} aria-label="끝으로" title="끝으로">
               ⏭
             </Button>
             <div className="ml-auto">
@@ -191,23 +209,7 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
               />
             </div>
           </div>
-          <p className="text-xs text-ink-3">키보드: ← → 단계 이동, 스페이스 재생/일시정지</p>
-        </Card>
-
-        <Card>
-          <div className="flex items-center gap-2 text-xs text-ink-3">
-            <span className="font-mono">
-              단계 {index} / {last}
-            </span>
-            <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono">{step.kind}</span>
-          </div>
-          <div aria-live="polite">
-            <p className="mt-2 font-semibold">{step.what}</p>
-            <p className="mt-1 text-sm leading-relaxed text-ink-2">
-              <span className="font-medium text-ink">왜? </span>
-              {step.why}
-            </p>
-          </div>
+          <p className="hidden text-xs text-ink-3 lg:block">키보드: ← → 단계 이동, 스페이스 재생/일시정지</p>
         </Card>
       </div>
 
