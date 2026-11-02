@@ -206,3 +206,109 @@ table {
 .hljs-comment {
   color: var(--code-comment);
 }
+
+/* ── 움직임 ──────────────────────────────────────────────
+ * 화면 전환, 콘솔 열기, 테마 전환에 쓰는 애니메이션.
+ * 움직임 줄이기를 켠 사용자에게는 모두 끈다 (맨 아래).
+ */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-in-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes spin-in {
+  from {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+}
+
+/* 화면을 바꾸면 화면 안의 덩어리(머리말, 카드…)가 차례로 떠오른다.
+   끝난 뒤에는 transform을 남기지 않아야(backwards) 안쪽의 fixed 팝오버 위치가 어긋나지 않는다. */
+.page-enter > * > * {
+  animation: rise-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+}
+.page-enter > * > :nth-child(2) {
+  animation-delay: 60ms;
+}
+.page-enter > * > :nth-child(3) {
+  animation-delay: 120ms;
+}
+.page-enter > * > :nth-child(4) {
+  animation-delay: 180ms;
+}
+.page-enter > * > :nth-child(5) {
+  animation-delay: 240ms;
+}
+.page-enter > * > :nth-child(n + 6) {
+  animation-delay: 300ms;
+}
+
+.console-enter {
+  animation: slide-in-up 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@media (min-width: 48rem) {
+  .console-enter {
+    animation-name: slide-in-right;
+  }
+}
+
+.icon-enter {
+  animation: spin-in 0.45s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+/* 주 버튼에 마우스를 올리면 빛이 한 번 스쳐 지나간다 */
+.btn-shine {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.btn-shine:not(:disabled):hover::after {
+  transform: translateX(120%);
+  transition: transform 0.6s ease;
+}
+
+/* 테마 전환: 버튼에서 원이 퍼지며 새 테마가 드러난다 (ThemeToggle에서 clip-path를 움직인다) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

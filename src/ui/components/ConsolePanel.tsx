@@ -23,7 +23,7 @@ export function ConsoleToggle() {
       aria-pressed={open}
       aria-label={open ? '콘솔 닫기' : '콘솔 열기'}
       title={open ? '콘솔 닫기' : '콘솔 열기 (연산 과정 보기)'}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition-colors ${
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition duration-150 active:scale-90 ${
         open ? 'border-ink-2 bg-surface-3 text-ink' : 'border-line-strong text-ink-2 hover:bg-surface-2 hover:text-ink'
       }`}
     >
@@ -53,7 +53,7 @@ export default function ConsolePanel() {
   return (
     <aside
       aria-label="콘솔"
-      className="fixed inset-x-0 bottom-0 z-40 flex h-[45dvh] flex-col border-t border-console-line bg-console-bg text-console-ink md:inset-y-0 md:right-0 md:left-auto md:h-auto md:w-[min(420px,50vw)] md:border-t-0 md:border-l md:shadow-2xl md:shadow-black/50 xl:w-[400px] xl:shadow-none"
+      className="console-enter fixed inset-x-0 bottom-0 z-40 flex h-[45dvh] flex-col border-t border-console-line bg-console-bg text-console-ink md:inset-y-0 md:right-0 md:left-auto md:h-auto md:w-[min(420px,50vw)] md:border-t-0 md:border-l md:shadow-2xl md:shadow-black/50 xl:w-[400px] xl:shadow-none"
     >
       <div className="flex items-center gap-3 border-b border-console-line px-4 py-2.5">
         <span className="font-mono text-sm font-semibold">

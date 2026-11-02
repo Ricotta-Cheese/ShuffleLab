@@ -1,5 +1,6 @@
 // 화면 공통 UI 조각. 색은 index.css의 토큰만 쓴다.
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import { sliderClass, useSlider } from '../useSlider'
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(' ')
 
@@ -41,9 +42,9 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
     <button
       {...props}
       className={cx(
-        'inline-flex items-center justify-center gap-1.5 rounded-md text-sm whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+        'inline-flex items-center justify-center gap-1.5 rounded-md text-sm whitespace-nowrap transition duration-150 active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100',
         size === 'md' ? 'h-9 px-3.5' : 'px-2.5 py-1',
-        variant === 'primary' && 'bg-accent font-medium text-accent-ink hover:bg-accent-hover',
+        variant === 'primary' && 'btn-shine bg-accent font-medium text-accent-ink hover:bg-accent-hover hover:shadow-md',
         variant === 'secondary' && 'border border-line-strong bg-surface hover:bg-surface-2',
         variant === 'ghost' && 'text-ink-2 hover:bg-surface-2 hover:text-ink',
         className,
@@ -172,19 +173,22 @@ export function Segmented<V extends string | number>({
   ariaLabel: string
   size?: 'sm' | 'md'
 }) {
+  const [ref, slider] = useSlider<HTMLDivElement>(value)
   return (
-    <div role="group" aria-label={ariaLabel} className="inline-flex rounded-lg bg-surface-3 p-0.5">
+    <div ref={ref} role="group" aria-label={ariaLabel} className="relative inline-flex rounded-lg bg-surface-3 p-0.5">
+      <span aria-hidden className={cx(sliderClass, 'rounded-md bg-surface shadow-sm')} style={slider} />
       {options.map((o) => {
         const on = o.value === value
         return (
           <button
             key={o.value}
             aria-pressed={on}
+            data-active={on}
             onClick={() => onChange(o.value)}
             className={cx(
-              'rounded-md text-sm transition-colors',
+              'relative rounded-md text-sm transition active:scale-95',
               size === 'md' ? 'h-8 px-3' : 'px-2 py-0.5',
-              on ? 'bg-surface font-semibold text-ink shadow-sm' : 'text-ink-2 hover:text-ink',
+              on ? 'font-semibold text-ink' : 'text-ink-2 hover:text-ink',
             )}
           >
             {o.label}
@@ -250,7 +254,7 @@ export function Progress({ value }: { value: number }) {
       aria-valuenow={Math.round(value * 100)}
       className="h-1.5 w-28 overflow-hidden rounded bg-surface-3"
     >
-      <div className="h-full bg-ink-2 transition-[width]" style={{ width: `${value * 100}%` }} />
+      <div className="h-full bg-ink-2 transition-[width] duration-300 ease-out" style={{ width: `${value * 100}%` }} />
     </div>
   )
 }

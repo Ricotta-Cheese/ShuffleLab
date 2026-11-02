@@ -1,6 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router'
 import { screenMeta, type ScreenMeta } from '../../content/screens'
 import { useLastAlgorithm } from '../useAlgorithmParam'
+import { sliderClass, useSlider } from '../useSlider'
 
 /** 화면으로 가는 주소. 알고리즘을 고르는 화면이면 마지막으로 고른 알고리즘을 붙인다. */
 function useScreenHref() {
@@ -11,16 +12,20 @@ function useScreenHref() {
 /** 상단 메뉴 */
 export function TopNav() {
   const href = useScreenHref()
+  const { pathname } = useLocation()
+  const [ref, slider] = useSlider<HTMLElement>(pathname)
   return (
-    <nav aria-label="화면" className="-mx-4 flex flex-1 gap-1 overflow-x-auto px-4 md:mx-0 md:px-0">
+    <nav ref={ref} aria-label="화면" className="relative -mx-4 flex flex-1 gap-1 overflow-x-auto px-4 md:mx-0 md:px-0">
+      <span aria-hidden className={`${sliderClass} rounded-md bg-accent shadow-sm`} style={slider} />
       {screenMeta.map((s) => (
         <NavLink
           key={s.id}
           to={href(s)}
           title={s.subtitle}
+          data-active={s.path === pathname}
           className={({ isActive }) =>
-            `flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors ${
-              isActive ? 'bg-accent font-medium text-accent-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
+            `relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition duration-200 active:scale-95 ${
+              isActive ? 'font-medium text-accent-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
             }`
           }
         >
@@ -49,11 +54,21 @@ export function ScreenPager() {
     <Link
       to={href(s)}
       onClick={() => window.scrollTo({ top: 0 })}
-      className={`group flex flex-1 flex-col rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-line-strong hover:bg-surface-2 ${
+      className={`group flex flex-1 flex-col rounded-xl border border-line bg-surface px-4 py-3 transition duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface-2 hover:shadow-lg active:translate-y-0 active:scale-[0.99] ${
         dir === 'next' ? 'items-end text-right' : ''
       }`}
     >
-      <span className="text-xs text-ink-3">{dir === 'prev' ? '← 이전' : '다음 →'}</span>
+      <span className="text-xs text-ink-3">
+        {dir === 'prev' ? (
+          <>
+            <span className="inline-block transition-transform duration-200 group-hover:-translate-x-1">←</span> 이전
+          </>
+        ) : (
+          <>
+            다음 <span className="inline-block transition-transform duration-200 group-hover:translate-x-1">→</span>
+          </>
+        )}
+      </span>
       <span className="mt-0.5 font-semibold">
         <span className="mr-1.5 font-mono text-sm text-ink-3">{s.letter}</span>
         {s.name}

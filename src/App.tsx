@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { Navigate, Route, Routes } from 'react-router'
+import { Navigate, Route, Routes, useLocation } from 'react-router'
 import { description } from './content/description'
 import ConsolePanel, { ConsoleToggle } from './ui/components/ConsolePanel'
 import { ScreenPager, TopNav } from './ui/components/ScreenNav'
@@ -9,6 +9,7 @@ import { screens } from './ui/screens'
 
 export default function App() {
   const [consoleOpen] = useConsoleOpen()
+  const { pathname } = useLocation()
   return (
     // 콘솔을 열면 넓은 화면(xl 이상)에서는 화면 전체를 왼쪽으로 밀어 콘솔과 나란히 둔다.
     // 화면 레이아웃은 창 폭 기준이라, 그보다 좁은 데스크톱에서 밀면 배치가 깨지므로 콘솔을 위에 겹쳐 띄운다.
@@ -38,13 +39,16 @@ export default function App() {
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8">
         <Suspense fallback={<p className="text-sm text-ink-3">불러오는 중…</p>}>
-          <Routes>
-            <Route path="/" element={<Navigate to={screens[0].path} replace />} />
-            {screens.map((s) => (
-              <Route key={s.path} path={s.path} element={<s.Component />} />
-            ))}
-            <Route path="*" element={<Navigate to={screens[0].path} replace />} />
-          </Routes>
+          {/* 화면을 바꿀 때마다 새로 그려 등장 애니메이션을 다시 튼다 */}
+          <div key={pathname} className="page-enter">
+            <Routes>
+              <Route path="/" element={<Navigate to={screens[0].path} replace />} />
+              {screens.map((s) => (
+                <Route key={s.path} path={s.path} element={<s.Component />} />
+              ))}
+              <Route path="*" element={<Navigate to={screens[0].path} replace />} />
+            </Routes>
+          </div>
           <ScreenPager />
         </Suspense>
       </main>
