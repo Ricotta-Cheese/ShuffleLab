@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import { description } from '../../content/description'
 import { hypotheses } from '../../content/hypotheses'
+import { references } from '../../content/references'
 import { getScreen, screenMeta } from '../../content/screens'
 import { PageHeader } from '../components/ui'
 
@@ -137,6 +138,42 @@ function Hypotheses({ active }: { active: string }) {
   )
 }
 
+/** 참고 문헌: 분야별로 묶고, 이 사이트의 어디에 쓰였는지 함께 적는다 */
+function References() {
+  return (
+    <section id="references" className="scroll-mt-24">
+      <SectionTitle>참고 문헌</SectionTitle>
+      <p className="mt-1 text-xs text-ink-3">알고리즘, 난수, 지표의 출처예요. 각 항목 아래에 이 사이트의 어디에 쓰였는지 적었어요.</p>
+      <div className="mt-3 grid gap-3 lg:grid-cols-3">
+        {references.map((g) => (
+          <div key={g.title} className="rounded-xl border border-line bg-surface p-4">
+            <h4 className="text-xs font-semibold text-ink-3">{g.title}</h4>
+            <ol className="mt-3 space-y-4">
+              {g.items.map((r) => (
+                <li key={r.key} className="text-sm leading-relaxed">
+                  <p className="font-semibold text-ink">{r.key}</p>
+                  <p className="mt-0.5 text-ink-2 [overflow-wrap:anywhere]">
+                    {r.citation}
+                    {r.url && (
+                      <>
+                        {' '}
+                        <a href={r.url} target="_blank" rel="noreferrer" className="text-link hover:underline">
+                          {r.url.replace(/^https:\/\//, '')}
+                        </a>
+                      </>
+                    )}
+                  </p>
+                  <p className="mt-1 text-xs text-ink-3">{r.used}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function DescriptionScreen() {
   const { title, subtitle, motivation, links } = description
   const { hash } = useLocation()
@@ -155,6 +192,8 @@ export default function DescriptionScreen() {
       <Tour />
 
       <Hypotheses active={hash} />
+
+      <References />
 
       <section>
         <SectionTitle>링크</SectionTitle>

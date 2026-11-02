@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { preloadFormula } from './Formula'
 
 /**
  * 문장 속 용어를 누르면 바로 아래에 짧은 설명 창을 띄운다.
@@ -57,6 +58,9 @@ export default function TermPopover({ term, title, children }: { term: ReactNode
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((v) => !v)}
+        // 설명 창에 수식이 있을 수 있어, 열기 직전에 KaTeX를 미리 불러 둔다
+        onPointerEnter={preloadFormula}
+        onFocus={preloadFormula}
         className="cursor-help rounded-sm font-medium text-ink underline decoration-ink-3 decoration-dotted underline-offset-4 hover:decoration-ink"
       >
         {term}
