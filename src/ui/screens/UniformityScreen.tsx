@@ -13,8 +13,8 @@ import {
 import { algorithms, getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { factorial } from '../../core/algorithms/recorder'
 import type { RngKind } from '../../core/rng'
-import { exactDistribution } from '../../core/stats/exact'
-import { permutationRank, permutationUnrank } from '../../core/stats/permutation'
+import { permutationUnrank } from '../../core/stats/permutation'
+import { theoreticalProbabilities } from '../../core/theory'
 import { toProbabilities, totalVariation, uniformity } from '../../core/stats/tvd'
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
 import HypothesisNote from '../components/HypothesisNote'
@@ -36,23 +36,23 @@ interface Preset {
 
 const PRESETS: Preset[] = [
   {
-    label: 'H1 확인 · FY vs Naive',
-    desc: 'n = 3, 100,000회, 시드 1',
-    algoIds: ['fisher-yates', 'naive-swap'],
-    n: 3,
-    trials: 100_000,
+    label: 'H1 확인 · FY vs Riffle',
+    desc: 'n = 4, 1,000,000회, 시드 1 — Riffle의 작은 편향은 반복이 많아야 보여요',
+    algoIds: ['fisher-yates', 'riffle'],
+    n: 4,
+    trials: 1_000_000,
   },
   {
     label: '반복이 적을 때 (1,000회)',
     desc: '4종, n = 3, 1,000회, 시드 1 — 균등한 알고리즘도 TVD가 0이 아닌 것을 확인',
-    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    algoIds: ['fisher-yates', 'pick-remove', 'riffle', 'random-key'],
     n: 3,
     trials: 1_000,
   },
   {
     label: '전체 비교 (n = 4, 100만 회)',
     desc: '4종, n = 4, 1,000,000회, 시드 1',
-    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    algoIds: ['fisher-yates', 'pick-remove', 'riffle', 'random-key'],
     n: 4,
     trials: 1_000_000,
   },
@@ -64,21 +64,6 @@ const RNG_OPTIONS: { kind: RngKind; label: string }[] = [
   { kind: 'math', label: 'Math.random' },
   { kind: 'crypto', label: 'crypto (암호학적)' },
 ]
-
-/**
- * 순열별 이론 확률. int()만 쓰는 알고리즘은 모든 난수 경로를 열거해 정확히 구하고,
- * Random-Key Sort는 키가 모두 다르다는 가정(연속분포)에서의 이론값 1/n!을 쓴다.
- */
-function theoreticalProbabilities(id: AlgorithmId, n: number): number[] {
-  const size = factorial(n)
-  if (id === 'random-key') return new Array(size).fill(1 / size)
-  const algo = getAlgorithm(id)
-  const probs = new Array(size).fill(0)
-  for (const o of exactDistribution(n, (a, rng) => algo.shuffle(a, rng))) {
-    probs[permutationRank(o.perm)] = o.probability
-  }
-  return probs
-}
 
 export default function UniformityScreen() {
   const [values, setValues] = useState(() => ['1', '2', '3'])
@@ -364,8 +349,8 @@ export default function UniformityScreen() {
             기준으로 함께 보고, 반복 횟수를 늘려 차이가 줄어드는지 확인해요.
           </li>
           <li>
-            "이론 TVD"는 실험이 아니라 가능한 모든 난수 경로를 열거해 계산한 값이에요. Random-Key Sort는 키가 모두
-            다르다는 가정의 이론값이에요.
+            "이론 TVD"는 실험이 아니라 가능한 모든 난수 경로를 열거해 계산한 값이에요. Riffle Shuffle은 경로가 너무
+            많아 상승 수열 공식(Bayer–Diaconis)으로 계산하고, Random-Key Sort는 키가 모두 다르다는 가정의 이론값이에요.
           </li>
           <li>이 실험은 통계적 균등성을 관찰하는 것이고, 난수 생성기의 암호학적 안전성을 검증하지 않아요.</li>
         </ul>
@@ -391,21 +376,21 @@ function H1Note({
   config?: { n: number; trials: number }
 }) {
   const fy = results.find((r) => r.id === 'fisher-yates')
-  const naive = results.find((r) => r.id === 'naive-swap')
-  const ready = config && fy?.stats && naive?.stats
+  const rf = results.find((r) => r.id === 'riffle')
+  const ready = config && fy?.stats && rf?.stats
   return (
     <HypothesisNote id={1}>
       {ready ? (
         <>
           둘 다 O(n)인 두 알고리즘을 같은 조건(n = {config.n}, {fmtInt(config.trials)}회)에서 돌린 결과예요. 관측
-          TVD: Fisher–Yates <b className="font-mono text-ink">{fmtNum(fy.stats!.tvd, 4)}</b>, Naive Random Swap{' '}
-          <b className="font-mono text-ink">{fmtNum(naive.stats!.tvd, 4)}</b>. 모든 경로를 열거한 이론 TVD: 각각{' '}
+          TVD: Fisher–Yates <b className="font-mono text-ink">{fmtNum(fy.stats!.tvd, 4)}</b>, Riffle Shuffle{' '}
+          <b className="font-mono text-ink">{fmtNum(rf.stats!.tvd, 4)}</b>. 이론 TVD: 각각{' '}
           <span className="font-mono">{fmtNum(fy.theoryTvd, 4)}</span>,{' '}
-          <span className="font-mono">{fmtNum(naive.theoryTvd, 4)}</span>. 반복 횟수를 늘리면 관측값이 이론값에 얼마나
-          가까워지는지도 확인해요.
+          <span className="font-mono">{fmtNum(rf.theoryTvd, 4)}</span>. Riffle의 이론 TVD는 0이 아니지만 아주 작아서,
+          반복 횟수가 적으면 표본 잡음에 묻혀요. 반복을 늘리며 두 관측값이 갈라지는지 확인해요.
         </>
       ) : (
-        <>Fisher–Yates와 Naive Random Swap을 함께 골라 실험하면, 같은 조건에서 두 알고리즘의 TVD를 여기서 바로 비교해요.</>
+        <>Fisher–Yates와 Riffle Shuffle을 함께 골라 실험하면, 같은 조건에서 두 알고리즘의 TVD를 여기서 바로 비교해요.</>
       )}
     </HypothesisNote>
   )

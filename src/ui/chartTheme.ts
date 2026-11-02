@@ -16,7 +16,7 @@ export const chart = {
 export const algoColor: Record<AlgorithmId, string> = {
   'fisher-yates': 'var(--algo-fy)',
   'pick-remove': 'var(--algo-pr)',
-  'naive-swap': 'var(--algo-naive)',
+  'riffle': 'var(--algo-riffle)',
   'random-key': 'var(--algo-rk)',
 }
 

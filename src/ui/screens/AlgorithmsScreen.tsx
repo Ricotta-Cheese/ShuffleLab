@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
-import { algorithms, getAlgorithm } from '../../core/algorithms'
+import { algorithms, getAlgorithm, type Algorithm } from '../../core/algorithms'
+import type { AlgorithmContent } from '../../content/algorithms'
 import { algorithmContent } from '../../content/algorithms'
 import AlgorithmPicker from '../components/AlgorithmPicker'
-import Pseudocode from '../components/Pseudocode'
-import PseudocodeCompare from '../components/PseudocodeCompare'
+import CodeViewer from '../components/CodeViewer'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Card, Table, tbody, td, th, thead } from '../components/ui'
+import { Card, CardHeader, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor } from '../chartTheme'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
@@ -54,6 +54,59 @@ function InfoCard({ title, children }: { title: string; children: ReactNode }) {
   )
 }
 
+/** 복잡도·균등성의 값과 이유 한 칸 */
+function Trait({ label, value, children }: { label: string; value: ReactNode; children: ReactNode }) {
+  return (
+    <div className="py-4 first:pt-0 last:pb-0 md:px-5 md:py-0 md:first:pl-0 md:last:pr-0">
+      <p className="text-xs font-semibold text-ink-3">{label}</p>
+      <div className="mt-1 text-lg font-semibold">{value}</div>
+      <p className="mt-2 text-sm leading-relaxed text-ink-2">{children}</p>
+    </div>
+  )
+}
+
+function Points({ title, icon, iconClass, items }: { title: string; icon: string; iconClass: string; items: string[] }) {
+  return (
+    <div>
+      <h4 className="text-xs font-semibold text-ink-3">{title}</h4>
+      <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-ink-2">
+        {items.map((s) => (
+          <li key={s} className="flex gap-2">
+            <span aria-hidden className={`shrink-0 font-semibold ${iconClass}`}>
+              {icon}
+            </span>
+            {s}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/** 시간·공간·균등성과 장점·한계를 한 카드에 모은다 */
+function TraitsCard({ algo, c }: { algo: Algorithm; c: AlgorithmContent }) {
+  return (
+    <Card>
+      <CardHeader title="특징 한눈에 보기" />
+      <div className="divide-y divide-line md:grid md:grid-cols-3 md:divide-x md:divide-y-0">
+        <Trait label="시간 복잡도" value={<span className="font-mono">{algo.time}</span>}>
+          {c.timeWhy}
+        </Trait>
+        <Trait label="추가 공간" value={<span className="font-mono">{algo.space}</span>}>
+          {c.spaceWhy}
+        </Trait>
+        <Trait label="균등성" value={<UniformBadge uniform={algo.uniform} />}>
+          {c.uniformWhy}
+        </Trait>
+      </div>
+      <div className="mt-5 grid gap-5 border-t border-line pt-5 md:grid-cols-2">
+        <Points title="장점" icon="✓" iconClass="text-good" items={c.strengths} />
+        <Points title="한계와 주의점" icon="!" iconClass="text-warn" items={c.limits} />
+      </div>
+    </Card>
+  )
+}
+
 export default function AlgorithmsScreen() {
   const [id, setId] = useAlgorithmParam()
   const algo = getAlgorithm(id)
@@ -69,8 +122,6 @@ export default function AlgorithmsScreen() {
         <ComparisonTable />
       </div>
 
-      <PseudocodeCompare />
-
       <section className="space-y-4">
         <AlgorithmPicker value={id} onChange={setId} />
 
@@ -83,41 +134,17 @@ export default function AlgorithmsScreen() {
         </div>
         <p className="text-ink-2">{c.summary}</p>
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <InfoCard title="기본 원리">
-            <ol className="list-decimal space-y-1 pl-5">
-              {c.principle.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ol>
-          </InfoCard>
-          <InfoCard title="핵심 의사코드">
-            <Pseudocode lines={c.pseudocode} />
-          </InfoCard>
-        </div>
+        <InfoCard title="기본 원리">
+          <ol className="list-decimal space-y-1 pl-5">
+            {c.principle.map((p) => (
+              <li key={p}>{p}</li>
+            ))}
+          </ol>
+        </InfoCard>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <InfoCard title={`시간 복잡도 ${algo.time}`}>{c.timeWhy}</InfoCard>
-          <InfoCard title={`추가 공간 ${algo.space}`}>{c.spaceWhy}</InfoCard>
-          <InfoCard title="균등성">{c.uniformWhy}</InfoCard>
-        </div>
+        <CodeViewer id={id} />
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <InfoCard title="장점">
-            <ul className="list-disc space-y-1 pl-5">
-              {c.strengths.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
-          </InfoCard>
-          <InfoCard title="한계와 주의점">
-            <ul className="list-disc space-y-1 pl-5">
-              {c.limits.map((s) => (
-                <li key={s}>{s}</li>
-              ))}
-            </ul>
-          </InfoCard>
-        </div>
+        <TraitsCard algo={algo} c={c} />
       </section>
     </div>
   )

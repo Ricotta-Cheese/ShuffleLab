@@ -1,7 +1,14 @@
 // 화면 목록과 각 화면의 안내 문구. 상단 메뉴, 화면 머리말, 이전/다음 이동이 모두 이 순서를 따른다.
 import type { HypothesisId } from './hypotheses'
 
-export type ScreenId = 'description' | 'algorithms' | 'visualize' | 'relationship' | 'uniformity' | 'performance'
+export type ScreenId =
+  | 'description'
+  | 'algorithms'
+  | 'visualize'
+  | 'relationship'
+  | 'uniformity'
+  | 'performance'
+  | 'compare'
 
 export interface ScreenMeta {
   id: ScreenId
@@ -51,7 +58,7 @@ export const screenMeta: ScreenMeta[] = [
     goals: [
       '원소 10개 이하로 셔플 과정을 한 단계씩 따라가요.',
       '각 단계에서 무엇을, 왜 했는지 읽어요.',
-      'Fisher–Yates와 Naive Random Swap의 선택 범위가 어떻게 다른지 눈으로 비교해요.',
+      '교환으로 자리를 하나씩 확정하는 Fisher–Yates와 더미를 나눠 끼워 넣는 Riffle Shuffle이 어떻게 다른지 눈으로 비교해요.',
     ],
     hypotheses: [1],
     usesAlgorithm: true,
@@ -93,6 +100,19 @@ export const screenMeta: ScreenMeta[] = [
       '크기가 두 배일 때 시간이 몇 배가 되는지로 복잡도 차이를 확인해요.',
     ],
     hypotheses: [2],
+    usesAlgorithm: false,
+  },
+  {
+    id: 'compare',
+    path: '/compare',
+    letter: 'G',
+    name: '전체 비교',
+    subtitle: '측정 결과 한눈에',
+    goals: [
+      'D·E·F 화면에서 잰 효율성·균등성·관계성 결과를 알고리즘별로 나란히 비교해요.',
+      '알고리즘마다 측정 조건이 같은지 확인하고, 다르면 표준 조건으로 한 번에 다시 재요.',
+    ],
+    hypotheses: [1, 2, 3],
     usesAlgorithm: false,
   },
 ]

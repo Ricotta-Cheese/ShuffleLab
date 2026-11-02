@@ -19,7 +19,7 @@ export const hypotheses: Hypothesis[] = [
     id: 1,
     question: '시간 복잡도가 같아도 균등성은 다를까?',
     statement: '시간 복잡도가 같은 셔플 알고리즘이라도 균등성에는 차이가 있을 수 있다.',
-    compare: 'Fisher–Yates vs Naive Random Swap',
+    compare: 'Fisher–Yates vs Riffle Shuffle',
     path: '/uniformity',
     screenName: 'E 균등성',
   },

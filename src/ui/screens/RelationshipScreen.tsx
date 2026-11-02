@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
 import { factorial } from '../../core/algorithms/recorder'
+import { DIST_RUNS, DIST_SEED_OFFSET, repeatKendall } from '../../core/relationship'
 import { kendall, originalPositions } from '../../core/stats/kendall'
 import { Link } from 'react-router'
 import AlgorithmPicker from '../components/AlgorithmPicker'
@@ -15,12 +16,12 @@ import { Button, Card, CardHeader, IntInput, Table, tbody, td, th, thead } from 
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtNum, fmtPct } from '../format'
 import { randomDistinctValues } from '../inputArray'
+import { recordRelationship } from '../results'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
 const MIN_N = 2
 const MAX_N = 20
 const PAIR_GRID_MAX = 12
-const DIST_RUNS = 2000
 
 export default function RelationshipScreen() {
   const [id, setId] = useAlgorithmParam()
@@ -87,8 +88,7 @@ export default function RelationshipScreen() {
 
       <HypothesisNote id={3}>
         {algo.name} · 이번 결과 <b className="font-mono text-ink">R = {fmtNum(rel.r)}</b>. R은 원본 순서와 얼마나
-        닮았는지만 재고, 모든 순열이 공평하게 나오는지는 알려주지 않아요. 알고리즘을 Naive Random Swap(비균등)으로
-        바꿔 R을 비교해 보고, 균등성은{' '}
+        닮았는지만 재고, 모든 순열이 공평하게 나오는지는 알려주지 않아요. 알고리즘을 바꿔 R을 비교해 보고, 균등성은{' '}
         <Link to="/uniformity" className="text-link hover:underline">
           E 균등성
         </Link>
@@ -315,17 +315,14 @@ function TauDistribution({
             count: 0,
           }
         })
-    const rng = seededRng(seed + 1_000_003)
-    let sumTau = 0
-    let highR = 0
-    for (let t = 0; t < DIST_RUNS; t++) {
-      const { tau, r } = kendall(values, algoShuffle([...values], rng))
-      sumTau += tau
-      if (r >= 0.5) highR++
-      bins[binOf(tau)].count++
-    }
-    return { bins, binOf, mean: sumTau / DIST_RUNS, highR: highR / DIST_RUNS }
+    const summary = repeatKendall(values, algoShuffle, seededRng(seed + DIST_SEED_OFFSET), DIST_RUNS, (tau) => bins[binOf(tau)].count++)
+    return { bins, binOf, summary, mean: summary.meanTau, highR: summary.highR }
   }, [values, seed, algoShuffle])
+
+  // G 전체 비교 화면에서 볼 수 있게 이번 분포의 요약을 남긴다
+  useEffect(() => {
+    if (values.length >= 2) recordRelationship(algoId, { n: values.length, seed, ...stats.summary })
+  }, [algoId, values.length, seed, stats])
 
   const currentBin = Number.isNaN(currentTau) ? undefined : stats.bins[stats.binOf(currentTau)]?.label
 

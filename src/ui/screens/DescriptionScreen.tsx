@@ -28,7 +28,7 @@ function LinkCard({ label, href, hint }: { label: string; href: string; hint: st
   )
 }
 
-/** 사이트 사용 순서: B~F 화면을 순서대로 안내한다 */
+/** 사이트 사용 순서: B~G 화면을 순서대로 안내한다 */
 function Tour() {
   const steps = screenMeta.filter((s) => s.id !== 'description')
   return (

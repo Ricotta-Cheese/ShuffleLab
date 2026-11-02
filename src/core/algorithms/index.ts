@@ -1,13 +1,13 @@
 import { fisherYatesAlgorithm } from './fisherYates'
-import { naiveSwapAlgorithm } from './naiveSwap'
 import { pickRemoveAlgorithm } from './pickRemove'
 import { randomKeyAlgorithm } from './randomKey'
+import { riffleAlgorithm } from './riffle'
 import type { Algorithm, AlgorithmId } from './types'
 
 export const algorithms: Algorithm[] = [
   fisherYatesAlgorithm,
   pickRemoveAlgorithm,
-  naiveSwapAlgorithm,
+  riffleAlgorithm,
   randomKeyAlgorithm,
 ]
 

@@ -4,10 +4,11 @@ export function emptyCounters(): Counters {
   return { randomCalls: 0, swaps: 0, comparisons: 0, reads: 0, writes: 0, shifts: 0 }
 }
 
-type StepInput<T> = Omit<Step<T>, 'counters' | 'array' | 'output' | 'keys'> & {
+type StepInput<T> = Omit<Step<T>, 'counters' | 'array' | 'output' | 'keys' | 'source'> & {
   array: readonly T[]
   output?: readonly T[]
   keys?: readonly (number | undefined)[]
+  source?: readonly (0 | 1)[]
 }
 
 /** 단계 기록 도구. push할 때마다 배열과 카운터를 복사해 스냅샷으로 남긴다. */
@@ -22,6 +23,7 @@ export function createRecorder<T>() {
         array: [...s.array],
         output: s.output && [...s.output],
         keys: s.keys && [...s.keys],
+        source: s.source && [...s.source],
         fixed: [...s.fixed],
         counters: { ...counters },
       })

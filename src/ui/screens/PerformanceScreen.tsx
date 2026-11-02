@@ -9,12 +9,12 @@ import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
 import { Button, Callout, Card, CardHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt } from '../format'
-import { useBenchmark } from '../useBenchmark'
+import { BENCH_BUDGET_MS, BENCH_MIN_EXP, useBenchmark } from '../useBenchmark'
 
-const MIN_EXP = 8
+const MIN_EXP = BENCH_MIN_EXP
 const MAX_EXP_OPTIONS = [14, 16, 18, 20]
 const SAMPLE_OPTIONS = [5, 9, 15]
-const BUDGET_MS = 200
+const BUDGET_MS = BENCH_BUDGET_MS
 
 interface Preset {
   label: string
@@ -35,14 +35,14 @@ const PRESETS: Preset[] = [
   {
     label: '빠른 확인 (최대 2^14)',
     desc: '4종, 최대 2^14, 5회 측정 중앙값',
-    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    algoIds: ['fisher-yates', 'pick-remove', 'riffle', 'random-key'],
     maxExp: 14,
     samples: 5,
   },
   {
     label: '전체 비교 (최대 2^18)',
     desc: '4종, 최대 2^18, 9회 측정 중앙값',
-    algoIds: ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'],
+    algoIds: ['fisher-yates', 'pick-remove', 'riffle', 'random-key'],
     maxExp: 18,
     samples: 9,
   },
@@ -55,7 +55,7 @@ const RNG_OPTIONS: { kind: RngKind; label: string }[] = [
 
 const expectedRatio: Record<AlgorithmId, string> = {
   'fisher-yates': '≈ 2',
-  'naive-swap': '≈ 2',
+  'riffle': '≈ 2',
   'random-key': '2보다 조금 큼',
   'pick-remove': '≈ 4',
 }
@@ -70,7 +70,7 @@ function fmtTime(ms: number) {
 const shortName: Record<AlgorithmId, string> = {
   'fisher-yates': 'Fisher–Yates',
   'pick-remove': 'Pick & Remove',
-  'naive-swap': 'Naive Swap',
+  'riffle': 'Riffle',
   'random-key': 'Random-Key',
 }
 

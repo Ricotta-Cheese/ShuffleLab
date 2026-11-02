@@ -1,9 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AlgorithmId } from '../core/algorithms'
 import type { BenchPoint } from '../core/benchmark'
+import { recordPerformance, type PerformanceEntry } from './results'
 import type { BenchRequest, BenchResponse } from '../workers/bench.worker'
 
 export type BenchConfig = Omit<BenchRequest, 'jobId'>
+
+/** 측정을 시작하는 크기 2^BENCH_MIN_EXP */
+export const BENCH_MIN_EXP = 8
+/** 한 크기의 중앙값이 이 시간(ms)을 넘으면 그 알고리즘의 더 큰 크기는 건너뛴다 */
+export const BENCH_BUDGET_MS = 200
 
 export interface BenchState {
   config?: BenchConfig
@@ -45,10 +51,21 @@ export function useBenchmark() {
     stop()
     const id = ++jobId.current
     setState({ ...initial, config, status: 'running', hiddenDuringRun: document.hidden })
+    const points: BenchPoint[] = []
     const w = new Worker(new URL('../workers/bench.worker.ts', import.meta.url), { type: 'module' })
     w.onmessage = (e: MessageEvent<BenchResponse>) => {
       const msg = e.data
       if (msg.jobId !== jobId.current) return
+      if (msg.type === 'point') points.push(msg.point)
+      // 끝까지 측정한 결과만 G 전체 비교 화면에 기록한다 (취소·오류는 남기지 않음)
+      if (msg.type === 'done') {
+        const entries: Partial<Record<AlgorithmId, Omit<PerformanceEntry, 'at'>>> = {}
+        for (const id of config.algoIds) {
+          const own = points.filter((p) => p.algoId === id).map((p) => ({ n: p.n, medianMs: p.medianMs }))
+          if (own.length) entries[id] = { samples: config.samples, rngKind: config.rngKind, points: own }
+        }
+        recordPerformance(entries)
+      }
       setState((s) => {
         switch (msg.type) {
           case 'measuring':

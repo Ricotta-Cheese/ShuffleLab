@@ -25,6 +25,8 @@ export type StepKind =
   | 'move' // 결과 배열로 옮기고 원래 배열에서 제거 (Pick & Remove)
   | 'assignKey' // 무작위 키 부여 (Random-Key Sort)
   | 'sort' // 키 기준 정렬 (Random-Key Sort)
+  | 'cut' // 더미를 위아래 둘로 나눔 (Riffle)
+  | 'riffle' // 두 더미를 번갈아 내려놓음 (Riffle)
   | 'done' // 완료
 
 export interface Step<T> {
@@ -35,6 +37,10 @@ export interface Step<T> {
   output?: T[]
   /** Random-Key Sort에서 array와 같은 순서로 정렬된 키 (아직 부여 전이면 undefined) */
   keys?: (number | undefined)[]
+  /** Riffle에서 위 더미의 장수. array[0..cut−1]이 위 더미, 나머지가 아래 더미 */
+  cut?: number
+  /** Riffle에서 각 위치의 카드가 온 더미 (0 = 위, 1 = 아래) */
+  source?: (0 | 1)[]
   /** 현재 기준 위치 */
   i?: number
   /** 무작위로 선택된 위치 */
@@ -55,7 +61,7 @@ export interface Trace<T> {
   counters: Counters
 }
 
-export type AlgorithmId = 'fisher-yates' | 'pick-remove' | 'naive-swap' | 'random-key'
+export type AlgorithmId = 'fisher-yates' | 'pick-remove' | 'riffle' | 'random-key'
 
 export interface Algorithm {
   id: AlgorithmId
@@ -70,6 +76,6 @@ export interface Algorithm {
   inPlace: boolean
   time: string
   space: string
-  /** 균등한 순열 생성 여부 (이론) */
-  uniform: 'yes' | 'no' | 'conditional'
+  /** 균등한 순열 생성 여부 (이론). approximate: 정확히 균등하지는 않지만 편향이 매우 작음 */
+  uniform: 'yes' | 'no' | 'conditional' | 'approximate'
 }

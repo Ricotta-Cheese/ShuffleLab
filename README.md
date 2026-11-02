@@ -15,12 +15,12 @@
 |---|---|---|---|---|
 | Fisher–Yates | O(n) | O(1) | 예 | 기준 알고리즘 |
 | Random Pick & Remove | O(n²) | O(n) | 예 | 균등한 셔플끼리의 효율성 비교 |
-| Naive Random Swap | O(n) | O(1) | 아니요 (n ≥ 3) | 같은 O(n)인데 균등성이 다른 반례 |
+| Riffle Shuffle (7회) | O(n) | O(n) | 근사적으로 (TVD < 0.01, n ≤ 5) | 같은 O(n)인데 균등성이 다른 실제 카드 섞기 모델 |
 | Random-Key Sort | O(n log n) | O(n) | 키가 모두 다를 때만 | 정렬을 이용한 셔플 |
 
 - **Fisher–Yates**: 맨 뒤 칸부터 `0..i` 범위에서 하나를 골라 i번 칸과 바꾸고, 그 칸을 확정합니다.
 - **Random Pick & Remove**: 남은 원소 중 하나를 골라 결과 배열에 붙이고 원래 배열에서 지웁니다. 지울 때마다 뒤쪽 원소를 당겨야 해서 O(n²)입니다.
-- **Naive Random Swap**: 모든 i에 대해 배열 **전체**에서 j를 골라 바꿉니다. 경로 수 nⁿ이 n!로 나누어떨어지지 않아(n ≥ 3) 일부 순열이 더 자주 나옵니다. **의도적으로 넣은 잘못된 구현입니다.**
+- **Riffle Shuffle**: 더미를 위아래로 나눠 번갈아 떨어뜨리는 Gilbert–Shannon–Reeds 리플을 7번 반복합니다. 경로 2^(7n)개를 n!개 순열에 똑같이 나눌 수 없어 정확히 균등하지는 않지만, 편향이 매우 작습니다. 정확한 확률은 상승 수열 공식(Bayer–Diaconis)으로 구합니다.
 - **Random-Key Sort**: 원소마다 [0, 1) 난수 키를 붙이고 키 순으로 정렬합니다. 실제 실수는 정밀도가 유한해서 키가 같을 수 있고, 이때 안정 정렬이 원래 순서를 유지하면 편향이 생깁니다.
 
 ## 분석 지표
@@ -40,14 +40,16 @@
 | 화면 | 내용 |
 |---|---|
 | A. 설명 | 프로젝트 요약, 둘러보기 순서, 주제 선정 이유, 분석 관점, 연구 가설 H1~H4, 링크 |
-| B. 알고리즘 | 비교표, 의사코드 나란히 보기(다른 줄 강조), 원리, 복잡도와 그 이유, 균등성 근거 |
+| B. 알고리즘 | 비교표, 원리, Pseudo·C++·Python·Java 코드(문법 강조), 복잡도·균등성과 그 이유, 장점·한계를 모은 특징 카드 |
 | C. 동작 시각화 | 최대 10개 원소의 단계별 애니메이션, 단계마다 "무엇을 / 왜" 설명, 의사코드 줄 강조, 현재 τ·R, 연산 횟수 |
 | D. 관계성 | τ·R·C·D 요약, 원소 위치 이동 연결선, 쌍별 순서 비교, 반복 실행 시 τ 분포, 가설 3 비교 사례(항상 k칸 회전) |
 | E. 균등성 | 추천 실험, Web Worker 반복 실험, 순열별 관측·이론 확률, TVD, U, 세로축 확대 |
 | F. 성능 | 추천 설정, 크기 2배씩 실행 시간 측정(Worker), 로그-로그 차트, 원소당 시간, 2배 증가 비율 |
+| G. 전체 비교 | D·E·F에서 잰 결과를 알고리즘별로 모은 종합 비교표와 막대 차트, 측정 조건 일치 여부, 표준 조건으로 한 번에 측정, 가설 H1~H3 요약 |
 
 - 화면마다 위쪽에 "이 화면에서 확인할 것"과 관련 가설을, 아래쪽에 이전/다음 화면 이동을 둡니다.
 - D·E·F의 가설 상자는 미리 쓴 결론 대신 그 화면에서 방금 돌린 수치를 보여줍니다.
+- D·E·F에서 잰 결과는 알고리즘별로 마지막 값이 브라우저에 저장되고, G 화면이 이를 모아 보여줍니다. 알고리즘마다 측정 조건이 다르면 경고합니다.
 - D·E 화면은 **랜덤 배열**과 **직접 입력한 배열** 중에서 고를 수 있습니다.
 - B·C·D 화면에서 고른 알고리즘은 주소(`?algo=`)에 남고, 상단 메뉴로 이동해도 이어집니다.
 
@@ -64,7 +66,7 @@
   - `shuffle`은 성능 측정과 반복 실험에 씁니다.
   - `trace`는 단계별 배열 상태, 선택 위치, 누적 연산 횟수, "무엇을 / 왜" 설명을 남깁니다.
   - 같은 시드에서 두 결과가 같은지 테스트로 확인합니다.
-- **정확한 이론 분포**: `exactDistribution`은 작은 n에서 난수 선택 경로를 모두 따라가 순열별 정확한 확률을 구합니다. 실험 결과와 비교할 이론값으로 씁니다.
+- **정확한 이론 분포**: `exactDistribution`은 작은 n에서 난수 선택 경로를 모두 따라가 순열별 정확한 확률을 구합니다. 실험 결과와 비교할 이론값으로 씁니다. 경로가 너무 많은 Riffle은 상승 수열 공식 `riffleProbability`를 씁니다.
 
 ## 시작하기
 
@@ -86,10 +88,12 @@ src/
     rng.ts                 난수 생성기
     algorithms/            알고리즘 4종 (shuffle + trace), 단계 기록 타입
     stats/                 통계 지표, 정확 분포 열거
+    theory.ts              알고리즘별 이론 분포·이론 TVD
+    relationship.ts        같은 입력을 반복해 섞은 τ 요약
   workers/                 반복 실험·성능 측정용 Web Worker
   content/                 화면 문구 (설명·링크, 알고리즘 설명, 화면 목록·목표, 연구 가설)
   ui/
-    screens/               화면 A~F
+    screens/               화면 A~G
     components/            공통 UI 컴포넌트 (ui.tsx: 카드·버튼·선택 상자 등)
   index.css                색상 토큰 (다크/라이트)
 ```
@@ -102,10 +106,10 @@ src/
 - 같은 시드에서 `shuffle`과 `trace`의 결과가 같은지 확인합니다.
 - Fisher–Yates의 j가 항상 `0 ≤ j ≤ i` 범위인지 확인합니다.
 - Fisher–Yates와 Pick & Remove는 n = 1~5에서 모든 순열의 정확한 확률이 1/n!인지 확인합니다.
-- Naive Swap
-  - n = 3에서 27개 경로가 순열마다 4개 또는 5개로 나뉘는지 확인합니다.
-  - n = 2에서는 균등한지 확인합니다.
-  - n = 3~5에서는 균등하지 않은지 확인합니다.
+- Riffle Shuffle
+  - 리플 1~3번에서 경로를 모두 열거한 분포가 상승 수열 공식과 같은지 확인합니다(n = 3~5).
+  - 리플 한 번은 두 더미의 순서를 유지하는지(상승 수열 2개 이하) 확인합니다.
+  - 리플 7번에서 확률의 합이 1이고, 정확히 균등하지는 않은지 확인합니다(n = 2~6).
 - Random-Key Sort
   - 키 순서대로 정렬되는지 확인합니다.
   - 같은 키가 있으면 원래 순서를 유지하고, 그 사실을 단계 설명에 표시하는지 확인합니다.
@@ -113,11 +117,12 @@ src/
 
 ## 기술 스택
 
-React 19 · TypeScript · Vite · Tailwind CSS v4 · Recharts · React Router · Vitest · Vercel
+React 19 · TypeScript · Vite · Tailwind CSS v4 · Recharts · highlight.js · React Router · Vitest · Vercel
 
 ## 참고문헌
 
 - Knuth, D. E. *The Art of Computer Programming, Vol. 2: Seminumerical Algorithms* (3rd ed.), §3.4.2. Addison-Wesley, 1997.
 - Fisher, R. A., & Yates, F. *Statistical Tables for Biological, Agricultural and Medical Research*. Oliver & Boyd, 1938.
 - Durstenfeld, R. Algorithm 235: Random permutation. *Communications of the ACM*, 7(7), 420, 1964.
+- Bayer, D., & Diaconis, P. Trailing the dovetail shuffle to its lair. *The Annals of Applied Probability*, 2(2), 294–313, 1992.
 - Kendall, M. G. A new measure of rank correlation. *Biometrika*, 30(1/2), 81–93, 1938.

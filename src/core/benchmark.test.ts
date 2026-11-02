@@ -23,7 +23,7 @@ describe('benchmarkAlgorithm', () => {
   it('batch × n이 상한을 넘지 않는다', () => {
     let t = 0
     const now = () => (t += 0.0001)
-    const res = benchmarkAlgorithm('naive-swap', 1000, {
+    const res = benchmarkAlgorithm('riffle', 1000, {
       samples: 3,
       rng: seededRng(1),
       minBatchMs: 1e9,
@@ -34,7 +34,7 @@ describe('benchmarkAlgorithm', () => {
   })
 
   it('실제 시계로 네 알고리즘을 잴 수 있다', () => {
-    for (const id of ['fisher-yates', 'pick-remove', 'naive-swap', 'random-key'] as const) {
+    for (const id of ['fisher-yates', 'pick-remove', 'riffle', 'random-key'] as const) {
       const res = benchmarkAlgorithm(id, 256, { samples: 3, rng: seededRng(1), minBatchMs: 1 })
       expect(res.medianMs).toBeGreaterThanOrEqual(0)
       expect(res.minMs).toBeLessThanOrEqual(res.maxMs)

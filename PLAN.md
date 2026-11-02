@@ -10,7 +10,7 @@
 |---|---|---|---|---|
 | Fisher–Yates | O(n) | O(1) | 균등 | 기준 |
 | Random Pick & Remove | O(n²) | O(n) | 균등 | 효율성 비교 |
-| Naive Random Swap | O(n) | O(1) | 비균등 | 균등성 반례 |
+| Riffle Shuffle (7회) | O(n) | O(n) | 근사 균등 | 같은 O(n)에서 균등성 비교 |
 | Random-Key Sort | O(n log n) | O(n) | 키 중복이 없으면 균등 | 확장 비교 |
 
 ## 입력 방식
@@ -32,7 +32,7 @@ src/
     stats/       Kendall τ·R, Spearman ρ, 순열 인덱싱, TVD·U, 정확 분포 열거
   workers/       반복 실험, 벤치마크 (UI 멈춤 방지)
   ui/
-    screens/     A 설명 / B 알고리즘 / C 동작 시각화 / D 관계성 / E 균등성 / F 성능
+    screens/     A 설명 / B 알고리즘 / C 동작 시각화 / D 관계성 / E 균등성 / F 성능 / G 전체 비교
   content/       A 설명 화면 문구와 링크 (description.ts)
     components/  배열 뷰, 단계 컨트롤, 다이어그램 내보내기, 차트
 ```

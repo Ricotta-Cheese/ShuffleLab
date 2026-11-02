@@ -52,7 +52,7 @@ describe('TVD와 균등성 지수 U', () => {
     expect(totalVariation([0.5, 0.25, 0.25], [1 / 3, 1 / 3, 1 / 3])).toBeCloseTo(1 / 6, 12)
   })
 
-  it('Naive Swap n=3의 정확한 분포(4,5,5,5,4,4 / 27)는 TVD = 1/18', () => {
+  it('경로 27개가 4,5,5,5,4,4개씩 나뉜 분포는 TVD = 1/18', () => {
     const p = [4, 5, 5, 5, 4, 4].map((c) => c / 27)
     expect(totalVariation(p, new Array(6).fill(1 / 6))).toBeCloseTo(1 / 18, 12)
   })

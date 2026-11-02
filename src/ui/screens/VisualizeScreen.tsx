@@ -33,7 +33,7 @@ const counterLabels: Record<keyof Counters, string> = {
 
 const visibleCounters: Record<AlgorithmId, (keyof Counters)[]> = {
   'fisher-yates': ['randomCalls', 'swaps', 'reads', 'writes'],
-  'naive-swap': ['randomCalls', 'swaps', 'reads', 'writes'],
+  'riffle': ['randomCalls', 'reads', 'writes'],
   'pick-remove': ['randomCalls', 'reads', 'writes', 'shifts'],
   'random-key': ['randomCalls', 'comparisons', 'reads', 'writes'],
 }
@@ -104,6 +104,7 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
   const algo = getAlgorithm(id)
   const content = algorithmContent[id]
   const isPickRemove = id === 'pick-remove'
+  const isRiffle = id === 'riffle'
 
   useEffect(() => {
     if (!playing) return
@@ -152,9 +153,9 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
             <span>
               초기 배열 <span className="font-mono text-ink">[{initial.join(', ')}]</span>
             </span>
-            <Legend />
+            <Legend riffle={isRiffle} />
           </div>
-          <ArrayStage step={step} n={initial.length} withOutput={isPickRemove} durationMs={Math.min(450, delay * 0.6)} />
+          <ArrayStage step={step} n={initial.length} withOutput={isPickRemove} withPiles={isRiffle} durationMs={Math.min(450, delay * 0.6)} />
 
           {/* 단계 설명은 배열 바로 아래에 두어 시선이 멀리 움직이지 않게 한다 */}
           <div className="mt-4 border-t border-line pt-4">
@@ -255,16 +256,16 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
   )
 }
 
-function Legend() {
+function Legend({ riffle }: { riffle: boolean }) {
   return (
     <span className="flex flex-wrap gap-3">
       <span className="flex items-center gap-1">
         <span className="inline-block h-3 w-3 rounded-sm bg-role-i" />
-        i: 현재 위치
+        {riffle ? '위 더미' : 'i: 현재 위치'}
       </span>
       <span className="flex items-center gap-1">
         <span className="inline-block h-3 w-3 rounded-sm bg-role-j" />
-        j: 무작위 선택
+        {riffle ? '아래 더미' : 'j: 무작위 선택'}
       </span>
       <span className="flex items-center gap-1">
         <span className="inline-grid h-3 w-3 place-items-center rounded-sm border border-ink-3 bg-surface-3 text-[8px] leading-none text-ink">

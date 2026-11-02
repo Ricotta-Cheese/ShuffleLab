@@ -6,6 +6,7 @@ const styles: Record<Algorithm['uniform'], { cls: string; icon: string }> = {
   yes: { cls: 'bg-good-soft text-good', icon: '✓' },
   no: { cls: 'bg-bad-soft text-bad', icon: '✗' },
   conditional: { cls: 'bg-warn-soft text-warn', icon: '△' },
+  approximate: { cls: 'bg-warn-soft text-warn', icon: '≈' },
 }
 
 export default function UniformBadge({ uniform }: { uniform: Algorithm['uniform'] }) {

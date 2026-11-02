@@ -33,10 +33,17 @@
   --code-muted: #6e7681;
   --code-active: rgba(240, 190, 80, 0.16);
   --code-active-ink: #f5dfa8;
+  /* 코드 강조 색. 코드 배경은 두 테마 모두 어두우므로 한 번만 정한다 */
+  --code-keyword: #ff7b72;
+  --code-string: #a5d6ff;
+  --code-number: #79c0ff;
+  --code-title: #d2a8ff;
+  --code-type: #ffa657;
+  --code-comment: #8b949e;
 
   --algo-fy: #3987e5;
   --algo-pr: #d95926;
-  --algo-naive: #199e70;
+  --algo-riffle: #199e70;
   --algo-rk: #c98500;
 
   --role-i: #9085e9;
@@ -76,7 +83,7 @@
 
   --algo-fy: #2a78d6;
   --algo-pr: #eb6834;
-  --algo-naive: #1baf7a;
+  --algo-riffle: #1baf7a;
   --algo-rk: #eda100;
 
   --role-i: #6250d6;
@@ -141,4 +148,32 @@ body {
 .font-mono,
 table {
   font-variant-numeric: tabular-nums;
+}
+
+/* highlight.js 토큰 (CodeViewer) */
+.hljs-keyword,
+.hljs-meta,
+.hljs-operator {
+  color: var(--code-keyword);
+}
+.hljs-string,
+.hljs-meta .hljs-string {
+  color: var(--code-string);
+}
+.hljs-number,
+.hljs-literal,
+.hljs-variable {
+  color: var(--code-number);
+}
+.hljs-title,
+.hljs-title.function_ {
+  color: var(--code-title);
+}
+.hljs-type,
+.hljs-built_in,
+.hljs-title.class_ {
+  color: var(--code-type);
+}
+.hljs-comment {
+  color: var(--code-comment);
 }
