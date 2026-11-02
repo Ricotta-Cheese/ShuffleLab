@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { AlgorithmId } from '../core/algorithms'
+import { getAlgorithm, type AlgorithmId } from '../core/algorithms'
+import { factorial } from '../core/algorithms/recorder'
 import type { RngKind } from '../core/rng'
 import { uniformity } from '../core/stats/tvd'
 import { theoreticalTvd } from '../core/theory'
+import { log, rngName } from './console'
+import { fmtInt, fmtNum, fmtTime } from './format'
 import { recordUniformity } from './results'
 import type { ExperimentRequest, ExperimentResponse } from '../workers/experiment.worker'
 
@@ -45,8 +48,18 @@ export function useExperiment() {
     const id = ++jobId.current
     let remaining = cfg.algoIds.length
     const finishOne = () => {
-      if (--remaining === 0) onFinish?.()
+      if (--remaining === 0) {
+        log('균등성', '모든 알고리즘의 반복 실험이 끝났어요.', 'result')
+        onFinish?.()
+      }
     }
+    // 진행 상황은 25%마다 한 번만 남긴다 (매 알림마다 남기면 줄이 너무 많아진다)
+    const quarter: Partial<Record<AlgorithmId, number>> = {}
+    log(
+      '균등성',
+      `반복 실험 시작: ${cfg.algoIds.map((a) => getAlgorithm(a).name).join(', ')}\n` +
+        `원소 ${cfg.n}개(순열 ${factorial(cfg.n)}가지) · ${fmtInt(cfg.trials)}회 · 난수 ${rngName[cfg.rngKind]} · 시드 ${cfg.seed} · Worker ${cfg.algoIds.length}개`,
+    )
     setConfig(cfg)
     setRuns(Object.fromEntries(cfg.algoIds.map((a) => [a, { done: 0 }])))
 
@@ -55,8 +68,27 @@ export function useExperiment() {
       w.onmessage = (e: MessageEvent<ExperimentResponse>) => {
         const msg = e.data
         if (msg.jobId !== jobId.current) return
+        const name = getAlgorithm(msg.algoId).name
+        if (msg.type === 'progress') {
+          const q = Math.floor((msg.done / cfg.trials) * 4)
+          if (q > (quarter[msg.algoId] ?? 0) && q < 4) {
+            quarter[msg.algoId] = q
+            log('균등성', `${name}: ${fmtInt(msg.done)} / ${fmtInt(cfg.trials)}회 (${q * 25}%)`, 'step')
+          }
+        }
+        if (msg.type === 'error') log('균등성', `${name}: 오류 — ${msg.message}`, 'warn')
         if (msg.type === 'result') {
           const { tvd, u } = uniformity(msg.counts)
+          const theory = theoreticalTvd(msg.algoId, cfg.n)
+          const min = Math.min(...msg.counts)
+          const max = Math.max(...msg.counts)
+          log(
+            '균등성',
+            `${name} 완료 (${fmtTime(msg.elapsedMs)})\n` +
+              `  순열별 횟수 ${fmtInt(min)}~${fmtInt(max)} (기대값 ${fmtInt(Math.round(cfg.trials / msg.counts.length))})\n` +
+              `  TVD = ½Σ|P−1/n!| = ${fmtNum(tvd, 4)} · U = ${fmtNum(u, 4)} · 이론 TVD ${fmtNum(theory, 4)}`,
+            'result',
+          )
           recordUniformity(msg.algoId, {
             n: cfg.n,
             trials: cfg.trials,
@@ -64,7 +96,7 @@ export function useExperiment() {
             seed: cfg.seed,
             tvd,
             u,
-            theoryTvd: theoreticalTvd(msg.algoId, cfg.n),
+            theoryTvd: theory,
             elapsedMs: msg.elapsedMs,
           })
         }
@@ -97,6 +129,7 @@ export function useExperiment() {
   }
 
   const cancel = () => {
+    log('균등성', '반복 실험을 취소했어요.', 'warn')
     stopAll()
     jobId.current++
     setRuns((prev) =>

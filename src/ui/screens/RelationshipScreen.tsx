@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
@@ -10,12 +10,15 @@ import AlgorithmPicker from '../components/AlgorithmPicker'
 import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
 import Metric from '../components/Metric'
+import Formula from '../components/Formula'
 import ScreenHeader from '../components/ScreenHeader'
+import TermPopover from '../components/TermPopover'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Card, CardHeader, IntInput, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Card, CardHeader, IntInput, SettingRow, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
-import { fmtNum, fmtPct } from '../format'
+import { fmtInt, fmtNum, fmtPct } from '../format'
 import { randomDistinctValues } from '../inputArray'
+import { log } from '../console'
 import { recordRelationship } from '../results'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
@@ -31,6 +34,22 @@ export default function RelationshipScreen() {
 
   const shuffled = useMemo(() => algo.shuffle([...values], seededRng(seed)), [algo, values, seed])
   const rel = kendall(values, shuffled)
+
+  // 섞을 때마다 원본·결과와 τ 계산 과정을 콘솔에 남긴다.
+  // 아래 τ 분포 요약(자식의 useEffect)보다 먼저 찍히도록 useLayoutEffect를 쓴다.
+  const loggedShuffle = useRef('')
+  useLayoutEffect(() => {
+    const key = `${algo.id}|${seed}|${shuffled.join(',')}`
+    if (loggedShuffle.current === key) return
+    loggedShuffle.current = key
+    const total = rel.concordant + rel.discordant
+    log(
+      'D 관계성',
+      `${algo.name} · 시드 ${seed}로 한 번 섞기\n  원본 [${values.join(', ')}]\n  결과 [${shuffled.join(', ')}]\n` +
+        `  쌍 ${total}개 중 일치 C = ${rel.concordant}, 불일치 D = ${rel.discordant} → τ = (${rel.concordant} − ${rel.discordant}) / ${total} = ${fmtNum(rel.tau)}`,
+      'step',
+    )
+  }, [algo, seed, values, shuffled, rel])
   // newPos[원본 위치] = 결과에서의 위치
   const newPos = useMemo(() => {
     const orig = originalPositions(values, shuffled)
@@ -43,20 +62,52 @@ export default function RelationshipScreen() {
     <div className="space-y-5">
       <ScreenHeader id="relationship"
         title="관계성 분석"
-        desc="한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 재요. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 세요."
+        desc={
+          <>
+            한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지{' '}
+            <TermPopover term="Kendall's τ" title="Kendall's τ (켄달 타우)">
+              <span className="block">
+                두 순서가 얼마나 같은 방향인지 재는 순위 상관계수예요. 원소 두 개씩 짝을 지어, 원본과 결과에서 앞뒤
+                순서가 같으면 일치(C), 반대면 불일치(D)로 세요.
+              </span>
+              <span className="block rounded-md bg-surface-2 px-3 py-2 text-ink">
+                <Formula display tex={String.raw`\tau = \frac{C - D}{C + D}`} />
+              </span>
+              <span className="block">
+                τ = 1이면 원본과 같은 순서, −1이면 완전히 반대 순서, 0 근처면 일치와 불일치가 비슷한 수예요. 원소가 n개면
+                쌍은 n(n−1)/2개예요.
+              </span>
+              <span className="block text-xs text-ink-3">
+                이 사이트는 R = |τ|를 관계성 지수로 써요. 원본과 닮은 정도일 뿐 무작위성 점수가 아니에요.
+              </span>
+            </TermPopover>
+            로 재요. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 세요.
+          </>
+        }
       />
 
-      <Card className="space-y-4">
-        <AlgorithmPicker value={id} onChange={setId} />
-        <InputArrayPicker value={values} onChange={setValues} minN={MIN_N} maxN={MAX_N} />
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <IntInput label="시드" value={seed} onChange={setSeed} />
-          <Button variant="primary" size="sm" onClick={() => setSeed(1 + Math.floor(Math.random() * 999_999))}>
+      <Card className="space-y-5">
+        <SettingRow label="알고리즘">
+          <div className="flex flex-wrap items-center gap-3">
+            <AlgorithmPicker value={id} onChange={setId} />
+            <UniformBadge uniform={algo.uniform} />
+          </div>
+        </SettingRow>
+
+        <div className="border-t border-line pt-5">
+          <SettingRow label="입력 배열">
+            <InputArrayPicker value={values} onChange={setValues} minN={MIN_N} maxN={MAX_N} />
+          </SettingRow>
+        </div>
+
+        <div className="flex flex-wrap items-end gap-3 border-t border-line pt-5">
+          <div className="w-28">
+            <IntInput stacked label="시드" value={seed} onChange={setSeed} />
+          </div>
+          <Button variant="primary" onClick={() => setSeed(1 + Math.floor(Math.random() * 999_999))}>
             다시 섞기
           </Button>
-          <span className="flex items-center gap-2 text-ink-3">
-            {algo.name} <UniformBadge uniform={algo.uniform} />
-          </span>
+          <p className="pb-2 text-xs text-ink-3">같은 시드는 항상 같은 결과를 만들어요. 다시 섞으면 새 시드를 골라요.</p>
         </div>
       </Card>
 
@@ -70,9 +121,12 @@ export default function RelationshipScreen() {
             <Metric label="순서 유지 쌍 C" value={String(rel.concordant)} />
             <Metric label="순서 뒤집힌 쌍 D" value={String(rel.discordant)} />
           </div>
-          <p className="mt-3 font-mono text-xs text-ink-2">
-            τ = (C − D) / (C + D) = ({rel.concordant} − {rel.discordant}) / {rel.concordant + rel.discordant}
-          </p>
+          <div className="mt-3 rounded-md bg-surface-2 px-3 py-2 text-sm text-ink">
+            <Formula
+              display
+              tex={String.raw`\tau = \frac{C - D}{C + D} = \frac{${rel.concordant} - ${rel.discordant}}{${rel.concordant + rel.discordant}}`}
+            />
+          </div>
           <p className="mt-3 text-xs leading-relaxed text-ink-3">
             τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서, 0은 일치·불일치 쌍이 같은 수예요. R은 원본 순서와의
             관계를 나타낼 뿐 무작위성 점수가 아니에요. R = 0이어도 무작위라는 뜻은 아니고, R = 1에는 원본과 같은
@@ -320,9 +374,19 @@ function TauDistribution({
   }, [values, seed, algoShuffle])
 
   // G 전체 비교 화면에서 볼 수 있게 이번 분포의 요약을 남긴다
+  const loggedStats = useRef<typeof stats>(undefined)
   useEffect(() => {
-    if (values.length >= 2) recordRelationship(algoId, { n: values.length, seed, ...stats.summary })
-  }, [algoId, values.length, seed, stats])
+    if (values.length < 2) return
+    recordRelationship(algoId, { n: values.length, seed, ...stats.summary })
+    if (loggedStats.current === stats) return
+    loggedStats.current = stats
+    const s = stats.summary
+    log(
+      'D 관계성',
+      `${algoName} · 같은 입력을 ${fmtInt(s.runs)}번 섞어 τ 분포 계산\n  평균 τ ${fmtNum(s.meanTau)} · 평균 R ${fmtNum(s.meanR)} · R ≥ 0.5인 비율 ${fmtPct(s.highR)}`,
+      'result',
+    )
+  }, [algoId, algoName, values.length, seed, stats])
 
   const currentBin = Number.isNaN(currentTau) ? undefined : stats.bins[stats.binOf(currentTau)]?.label
 

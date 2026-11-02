@@ -1,13 +1,19 @@
 import { Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { description } from './content/description'
+import ConsolePanel, { ConsoleToggle } from './ui/components/ConsolePanel'
 import { ScreenPager, TopNav } from './ui/components/ScreenNav'
 import ThemeToggle from './ui/components/ThemeToggle'
+import { useConsoleOpen } from './ui/console'
 import { screens } from './ui/screens'
 
 export default function App() {
+  const [consoleOpen] = useConsoleOpen()
   return (
-    <div className="flex min-h-dvh flex-col">
+    // 콘솔을 열면 넓은 화면(xl 이상)에서는 화면 전체를 왼쪽으로 밀어 콘솔과 나란히 둔다.
+    // 화면 레이아웃은 창 폭 기준이라, 그보다 좁은 데스크톱에서 밀면 배치가 깨지므로 콘솔을 위에 겹쳐 띄운다.
+    // 휴대폰에서는 아래쪽 절반에 띄우고 내용을 그만큼 위로 올린다.
+    <div className={`flex min-h-dvh flex-col ${consoleOpen ? 'pb-[45dvh] md:pb-0 xl:mr-[400px]' : ''}`}>
       <header className="sticky top-0 z-20 border-b border-line bg-bg/85 backdrop-blur">
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3 md:flex-row md:items-center md:gap-6">
           <div className="flex items-center justify-between gap-3">
@@ -17,12 +23,14 @@ export default function App() {
               </span>
               Shuffle Lab
             </h1>
-            <div className="md:hidden">
+            <div className="flex gap-2 md:hidden">
+              <ConsoleToggle />
               <ThemeToggle />
             </div>
           </div>
           <TopNav />
-          <div className="hidden md:block">
+          <div className="hidden gap-2 md:flex">
+            <ConsoleToggle />
             <ThemeToggle />
           </div>
         </div>
@@ -56,6 +64,7 @@ export default function App() {
           </p>
         </div>
       </footer>
+      <ConsolePanel />
     </div>
   )
 }

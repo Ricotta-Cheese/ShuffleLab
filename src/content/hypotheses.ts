@@ -29,7 +29,7 @@ export const hypotheses: Hypothesis[] = [
     statement: '균등한 셔플을 구현하는 알고리즘끼리도 시간 및 공간 효율성에 차이가 있을 수 있다.',
     compare: 'Fisher–Yates vs Random Pick & Remove',
     path: '/performance',
-    screenName: 'F 성능',
+    screenName: 'F 효율성',
   },
   {
     id: 3,

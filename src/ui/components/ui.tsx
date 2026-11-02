@@ -42,7 +42,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
       {...props}
       className={cx(
         'inline-flex items-center justify-center gap-1.5 rounded-md text-sm whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
-        size === 'md' ? 'px-3.5 py-1.5' : 'px-2.5 py-1',
+        size === 'md' ? 'h-9 px-3.5' : 'px-2.5 py-1',
         variant === 'primary' && 'bg-accent font-medium text-accent-ink hover:bg-accent-hover',
         variant === 'secondary' && 'border border-line-strong bg-surface hover:bg-surface-2',
         variant === 'ghost' && 'text-ink-2 hover:bg-surface-2 hover:text-ink',
@@ -52,8 +52,19 @@ export function Button({ variant = 'secondary', size = 'md', className, ...props
   )
 }
 
-const fieldClass =
-  'rounded-md border border-line-strong bg-surface px-2 py-1 text-sm text-ink focus-visible:outline-2 focus-visible:outline-focus'
+// 선택 창·입력 칸 공통 모양: 높이를 맞추고, 선택 창 화살표는 직접 그린다
+export const controlClass =
+  'h-9 rounded-md border border-line-strong bg-surface text-sm text-ink transition-colors hover:border-ink-3 focus-visible:outline-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:hover:border-line-strong'
+
+/** 이름 + 칸. stacked면 이름을 위에 작게, 아니면 왼쪽에 둔다. */
+function FieldLabel({ label, stacked, hideLabel, children }: { label: string; stacked?: boolean; hideLabel?: boolean; children: ReactNode }) {
+  return (
+    <label className={stacked ? 'flex min-w-0 flex-col gap-1.5' : 'flex items-center gap-2 text-sm text-ink-2'}>
+      <span className={cx(hideLabel && 'sr-only', stacked && 'text-xs font-medium text-ink-3')}>{label}</span>
+      {children}
+    </label>
+  )
+}
 
 export function Select<V extends string | number>({
   label,
@@ -61,6 +72,7 @@ export function Select<V extends string | number>({
   onChange,
   options,
   hideLabel,
+  stacked,
 }: {
   label: string
   value: V
@@ -68,25 +80,35 @@ export function Select<V extends string | number>({
   options: { value: V; label: string }[]
   /** 이름을 화면에서 숨기고 스크린리더에만 알린다 */
   hideLabel?: boolean
+  /** 이름을 칸 위에 둔다 (설정 패널용) */
+  stacked?: boolean
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-ink-2">
-      <span className={hideLabel ? 'sr-only' : undefined}>{label}</span>
-      <select
-        value={value}
-        onChange={(e) => {
-          const raw = e.target.value
-          onChange((typeof value === 'number' ? Number(raw) : raw) as V)
-        }}
-        className={fieldClass}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    <FieldLabel label={label} stacked={stacked} hideLabel={hideLabel}>
+      <span className={cx('relative', stacked && 'block')}>
+        <select
+          value={value}
+          onChange={(e) => {
+            const raw = e.target.value
+            onChange((typeof value === 'number' ? Number(raw) : raw) as V)
+          }}
+          className={cx(controlClass, 'cursor-pointer appearance-none pr-9 pl-3', stacked && 'w-full')}
+        >
+          {options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        <svg
+          aria-hidden
+          viewBox="0 0 16 16"
+          className="pointer-events-none absolute top-1/2 right-3 h-3.5 w-3.5 -translate-y-1/2 text-ink-3"
+        >
+          <path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </FieldLabel>
   )
 }
 
@@ -97,16 +119,17 @@ export function IntInput({
   onChange,
   min = 1,
   max = 999_999,
+  stacked,
 }: {
   label: string
   value: number
   onChange: (v: number) => void
   min?: number
   max?: number
+  stacked?: boolean
 }) {
   return (
-    <label className="flex items-center gap-2 text-sm text-ink-2">
-      {label}
+    <FieldLabel label={label} stacked={stacked}>
       <input
         type="number"
         min={min}
@@ -116,9 +139,22 @@ export function IntInput({
           const v = Number(e.target.value)
           if (Number.isInteger(v) && v >= min && v <= max) onChange(v)
         }}
-        className={cx(fieldClass, 'w-24 font-mono')}
+        className={cx(controlClass, 'px-3 font-mono', stacked ? 'w-full' : 'w-24')}
       />
-    </label>
+    </FieldLabel>
+  )
+}
+
+/**
+ * 설정 카드의 한 줄: 왼쪽에 이름, 오른쪽에 컨트롤. 이름 열 너비를 맞춰 여러 줄이 가지런히 정렬된다.
+ * 좁은 화면에서는 이름을 위에 둔다.
+ */
+export function SettingRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid gap-x-4 gap-y-2 md:grid-cols-[6rem_minmax(0,1fr)]">
+      <span className="text-xs font-medium text-ink-3 md:pt-2.5 md:text-sm md:font-normal">{label}</span>
+      <div className="min-w-0">{children}</div>
+    </div>
   )
 }
 
@@ -147,7 +183,7 @@ export function Segmented<V extends string | number>({
             onClick={() => onChange(o.value)}
             className={cx(
               'rounded-md text-sm transition-colors',
-              size === 'md' ? 'px-3 py-1' : 'px-2 py-0.5',
+              size === 'md' ? 'h-8 px-3' : 'px-2 py-0.5',
               on ? 'bg-surface font-semibold text-ink shadow-sm' : 'text-ink-2 hover:text-ink',
             )}
           >

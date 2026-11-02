@@ -6,9 +6,9 @@ import type { RngKind } from '../../core/rng'
 import HypothesisNote from '../components/HypothesisNote'
 import ScreenHeader from '../components/ScreenHeader'
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
-import { Button, Callout, Card, CardHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, Progress, Select, SettingRow, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
-import { fmtInt } from '../format'
+import { fmtInt, fmtTime } from '../format'
 import { BENCH_BUDGET_MS, BENCH_MIN_EXP, useBenchmark } from '../useBenchmark'
 
 const MIN_EXP = BENCH_MIN_EXP
@@ -58,12 +58,6 @@ const expectedRatio: Record<AlgorithmId, string> = {
   'riffle': '≈ 2',
   'random-key': '2보다 조금 큼',
   'pick-remove': '≈ 4',
-}
-
-function fmtTime(ms: number) {
-  if (ms < 0.001) return `${(ms * 1e6).toFixed(0)} ns`
-  if (ms < 1) return `${(ms * 1e3).toFixed(ms < 0.01 ? 2 : 1)} µs`
-  return `${ms.toFixed(ms < 10 ? 2 : 1)} ms`
 }
 
 // 선 끝 이름표용 짧은 이름
@@ -140,7 +134,7 @@ export default function PerformanceScreen() {
   return (
     <div className="space-y-5">
       <ScreenHeader id="performance"
-        title="성능 비교"
+        title="효율성 비교"
         desc="배열 크기를 두 배씩 늘리면서 셔플 1회의 실행 시간을 재요. 크기가 두 배가 될 때 시간이 몇 배가 되는지 보면 시간 복잡도의 증가 추세를 실제로 확인할 수 있어요."
       />
 
@@ -148,35 +142,51 @@ export default function PerformanceScreen() {
         브라우저는 다른 탭이나 최소화된 창을 느리게 실행해요. 측정 중에 탭을 바꾸면 시간이 실제보다 크게 나올 수 있어요.
       </Callout>
 
-      <Card className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-4 text-sm">
-          <span className="mr-1 text-ink-2">추천 설정</span>
-          {PRESETS.map((p) => (
-            <Button key={p.label} size="sm" disabled={running} onClick={() => runPreset(p)} title={p.desc}>
-              {p.label}
-            </Button>
-          ))}
+      <Card className="space-y-5">
+        <SettingRow label="추천 설정">
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <Button key={p.label} disabled={running} onClick={() => runPreset(p)} title={p.desc}>
+                {p.label}
+              </Button>
+            ))}
+          </div>
+        </SettingRow>
+
+        <div className="border-t border-line pt-5">
+          <SettingRow label="알고리즘">
+            <AlgorithmMultiPicker value={selected} onChange={setSelected} />
+          </SettingRow>
         </div>
-        <AlgorithmMultiPicker value={selected} onChange={setSelected} />
-        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
-          <Select
-            label="최대 크기"
-            value={maxExp}
-            onChange={setMaxExp}
-            options={MAX_EXP_OPTIONS.map((e) => ({ value: e, label: `2^${e} = ${fmtInt(2 ** e)}` }))}
-          />
-          <Select
-            label="반복 측정"
-            value={samples}
-            onChange={setSamples}
-            options={SAMPLE_OPTIONS.map((v) => ({ value: v, label: `${v}회 (중앙값)` }))}
-          />
-          <Select
-            label="난수"
-            value={rngKind}
-            onChange={setRngKind}
-            options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
-          />
+
+        <div className="flex flex-wrap items-end gap-3 border-t border-line pt-5">
+          <div className="w-40">
+            <Select
+              stacked
+              label="최대 크기 (원소 수)"
+              value={maxExp}
+              onChange={setMaxExp}
+              options={MAX_EXP_OPTIONS.map((e) => ({ value: e, label: `${fmtInt(2 ** e)}개` }))}
+            />
+          </div>
+          <div className="w-36">
+            <Select
+              stacked
+              label="측정 횟수 (중앙값)"
+              value={samples}
+              onChange={setSamples}
+              options={SAMPLE_OPTIONS.map((v) => ({ value: v, label: `${v}회` }))}
+            />
+          </div>
+          <div className="w-48">
+            <Select
+              stacked
+              label="난수"
+              value={rngKind}
+              onChange={setRngKind}
+              options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
+            />
+          </div>
           <div className="ml-auto flex gap-2">
             {running && <Button onClick={bench.cancel}>취소</Button>}
             <Button variant="primary" onClick={run} disabled={running || selected.length === 0}>
@@ -184,7 +194,7 @@ export default function PerformanceScreen() {
             </Button>
           </div>
         </div>
-        <p className="text-xs text-ink-3">
+        <p className="text-xs leading-relaxed text-ink-3">
           크기 {fmtInt(2 ** MIN_EXP)}부터 두 배씩 재요. 한 크기의 중앙값이 {BUDGET_MS}ms를 넘으면 그 알고리즘의 더 큰
           크기는 건너뛰어요 (O(n²)인 Pick & Remove가 화면을 오래 붙잡지 않도록).
         </p>

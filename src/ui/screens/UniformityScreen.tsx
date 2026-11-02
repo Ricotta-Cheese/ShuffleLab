@@ -19,9 +19,11 @@ import { toProbabilities, totalVariation, uniformity } from '../../core/stats/tv
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
 import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
+import Formula from '../components/Formula'
 import ScreenHeader from '../components/ScreenHeader'
+import TermPopover from '../components/TermPopover'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Callout, Card, CardHeader, IntInput, Progress, Segmented, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, IntInput, Progress, Segmented, Select, SettingRow, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt, fmtNum, fmtPct } from '../format'
 import { useExperiment } from '../useExperiment'
@@ -135,41 +137,79 @@ export default function UniformityScreen() {
     <div className="space-y-5">
       <ScreenHeader id="uniformity"
         title="반복 실험 및 균등성 분석"
-        desc="같은 알고리즘을 여러 번 실행해 순열별 발생 확률을 측정하고, 모든 순열이 1/n! 확률로 나오는 균등분포와의 차이를 TVD로 재요."
+        desc={
+          <>
+            같은 알고리즘을 여러 번 실행해 순열별 발생 확률을 측정하고, 모든 순열이 1/n! 확률로 나오는 균등분포와의
+            차이를{' '}
+            <TermPopover term="TVD" title="TVD (총변동거리, Total Variation Distance)">
+              <span className="block">
+                두 확률분포가 얼마나 다른지 재는 거리예요. 여기서는 실험으로 얻은 순열별 확률 P(π)를 모든 순열이 같은
+                확률 1/n!인 균등분포와 비교해요.
+              </span>
+              <span className="block rounded-md bg-surface-2 px-3 py-2 text-ink">
+                <Formula display tex={String.raw`\mathrm{TVD} = \frac{1}{2} \sum_{\pi} \left| P(\pi) - \frac{1}{n!} \right|`} />
+              </span>
+              <span className="block">
+                0이면 균등분포와 똑같고, 1에 가까울수록 다른 분포예요. 균등분포가 되려면 확률을 얼마나 옮겨야 하는지로 읽을
+                수 있어요. 예: TVD = 0.01이면 1/n!보다 자주 나온 순열들이 더 가져간 확률을 모두 더해 1%예요.
+              </span>
+              <span className="block text-xs text-ink-3">
+                실험 횟수가 유한하면 균등한 알고리즘도 0이 되지 않아요. 같은 조건의 Fisher–Yates 값을 표본 잡음의 기준으로
+                함께 봐요. 이 사이트는 U = 1 − TVD를 균등성 지수로 함께 보여줘요.
+              </span>
+            </TermPopover>
+            로 재요.
+          </>
+        }
       />
 
-      <Card className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-4 text-sm">
-          <span className="mr-1 text-ink-2">추천 실험</span>
-          {PRESETS.map((p) => (
-            <Button key={p.label} size="sm" disabled={running} onClick={() => runPreset(p)} title={p.desc}>
-              {p.label}
-            </Button>
-          ))}
-        </div>
-        <AlgorithmMultiPicker value={selected} onChange={setSelected} />
+      <Card className="space-y-5">
+        <SettingRow label="추천 실험">
+          <div className="flex flex-wrap gap-2">
+            {PRESETS.map((p) => (
+              <Button key={p.label} disabled={running} onClick={() => runPreset(p)} title={p.desc}>
+                {p.label}
+              </Button>
+            ))}
+          </div>
+        </SettingRow>
 
-        <div>
-          <InputArrayPicker value={values} onChange={setValues} minN={3} maxN={5} />
-          <p className="mt-1 text-xs text-ink-3">
-            순열은 원소 값이 아니라 위치 기준으로 세요. 입력 값은 그래프의 순열 이름에만 쓰이고 결과 분포에는 영향이 없어요.
-          </p>
+        <div className="space-y-4 border-t border-line pt-5">
+          <SettingRow label="알고리즘">
+            <AlgorithmMultiPicker value={selected} onChange={setSelected} />
+          </SettingRow>
+          <SettingRow label="입력 배열">
+            <InputArrayPicker value={values} onChange={setValues} minN={3} maxN={5} />
+            <p className="mt-2 text-xs leading-relaxed text-ink-3">
+              순열은 원소 값이 아니라 위치 기준으로 세요. 입력 값은 그래프의 순열 이름에만 쓰이고 결과 분포에는 영향이 없어요.
+            </p>
+          </SettingRow>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
-          <Select
-            label="반복 횟수"
-            value={trials}
-            onChange={setTrials}
-            options={TRIAL_OPTIONS.map((t) => ({ value: t, label: `${fmtInt(t)}회` }))}
-          />
-          <Select
-            label="난수"
-            value={rngKind}
-            onChange={setRngKind}
-            options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
-          />
-          {rngKind === 'seeded' && <IntInput label="시드" value={seed} onChange={setSeed} />}
+        <div className="flex flex-wrap items-end gap-3 border-t border-line pt-5">
+          <div className="w-36">
+            <Select
+              stacked
+              label="반복 횟수"
+              value={trials}
+              onChange={setTrials}
+              options={TRIAL_OPTIONS.map((t) => ({ value: t, label: `${fmtInt(t)}회` }))}
+            />
+          </div>
+          <div className="w-48">
+            <Select
+              stacked
+              label="난수"
+              value={rngKind}
+              onChange={setRngKind}
+              options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
+            />
+          </div>
+          {rngKind === 'seeded' && (
+            <div className="w-28">
+              <IntInput stacked label="시드" value={seed} onChange={setSeed} />
+            </div>
+          )}
           <div className="ml-auto flex gap-2">
             {running && <Button onClick={cancel}>취소</Button>}
             <Button variant="primary" onClick={run} disabled={running || selected.length === 0}>
@@ -341,7 +381,8 @@ export default function UniformityScreen() {
       <Callout title="해석할 때 주의할 점">
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            TVD = ½ Σ|P(π) − 1/n!|, U = 1 − TVD. U는 이 프로젝트에서 정의한 표시용 지수이며 셔플 품질의 절대 점수가
+            <Formula tex={String.raw`\mathrm{TVD} = \tfrac{1}{2} \sum_{\pi} \left| P(\pi) - \tfrac{1}{n!} \right|`} />,{' '}
+            <Formula tex={String.raw`U = 1 - \mathrm{TVD}`} />. U는 이 프로젝트에서 정의한 표시용 지수이며 셔플 품질의 절대 점수가
             아니에요.
           </li>
           <li>

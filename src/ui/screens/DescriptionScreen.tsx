@@ -2,8 +2,8 @@ import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router'
 import { description } from '../../content/description'
 import { hypotheses } from '../../content/hypotheses'
-import { screenMeta } from '../../content/screens'
-import { Card, CardHeader, PageHeader } from '../components/ui'
+import { getScreen, screenMeta } from '../../content/screens'
+import { PageHeader } from '../components/ui'
 
 function LinkCard({ label, href, hint }: { label: string; href: string; hint: string }) {
   const ready = href !== ''
@@ -28,13 +28,61 @@ function LinkCard({ label, href, hint }: { label: string; href: string; hint: st
   )
 }
 
+function SectionTitle({ children }: { children: string }) {
+  return <h3 className="text-sm font-semibold">{children}</h3>
+}
+
+/** 주제를 고른 이유: 출발점이 된 질문들 */
+function Motivation({ paragraphs }: { paragraphs: readonly string[] }) {
+  return (
+    <section>
+      <SectionTitle>이 주제를 고른 이유</SectionTitle>
+      <div className="mt-3 space-y-3 rounded-xl border border-line bg-surface p-5">
+        {paragraphs.map((p) => (
+          <p key={p} className="border-l-2 border-line-strong pl-4 leading-relaxed text-ink">
+            {p}
+          </p>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+/** 프로젝트 설명: 요약과 세 가지 분석 관점 (각 관점을 실험하는 화면으로 이동) */
+function Overview() {
+  return (
+    <section>
+      <SectionTitle>무엇을 비교하나요</SectionTitle>
+      <p className="mt-2 max-w-3xl leading-relaxed text-ink-2">{description.summary}</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {description.questions.map((q) => {
+          const s = getScreen(q.screen)
+          return (
+            <Link
+              key={q.name}
+              to={s.path}
+              className="flex flex-col rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong hover:bg-surface-2"
+            >
+              <span className="font-mono text-xs text-ink-3">{s.letter} 화면</span>
+              <span className="mt-1 font-semibold">
+                {q.name} <span className="text-sm font-normal text-ink-3">{q.en}</span>
+              </span>
+              <span className="mt-1 text-sm leading-relaxed text-ink-2">{q.desc}</span>
+            </Link>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
 /** 사이트 사용 순서: B~G 화면을 순서대로 안내한다 */
 function Tour() {
   const steps = screenMeta.filter((s) => s.id !== 'description')
   return (
     <section>
-      <h3 className="text-sm font-semibold">이렇게 둘러보세요</h3>
-      <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <SectionTitle>이렇게 둘러보세요</SectionTitle>
+      <ol className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {steps.map((s, k) => (
           <li key={s.id}>
             <Link
@@ -60,7 +108,7 @@ function Tour() {
 function Hypotheses({ active }: { active: string }) {
   return (
     <section id="hypotheses" className="scroll-mt-24">
-      <h3 className="text-sm font-semibold">연구 가설</h3>
+      <SectionTitle>연구 가설</SectionTitle>
       <p className="mt-1 text-xs text-ink-3">
         각 가설은 해당 화면에서 직접 실험해 확인해요. 화면마다 지금 돌린 결과가 가설과 어떻게 연결되는지 보여줘요.
       </p>
@@ -90,7 +138,7 @@ function Hypotheses({ active }: { active: string }) {
 }
 
 export default function DescriptionScreen() {
-  const { title, subtitle, summary, motivation, questions, links } = description
+  const { title, subtitle, motivation, links } = description
   const { hash } = useLocation()
 
   // 다른 화면의 가설 칩에서 #h1 같은 주소로 들어오면 그 카드로 스크롤한다
@@ -102,37 +150,14 @@ export default function DescriptionScreen() {
   return (
     <div className="space-y-8">
       <PageHeader eyebrow="A · 프로젝트 소개" title={title} desc={subtitle} />
-      <p className="-mt-4 max-w-3xl leading-relaxed text-ink-2">{summary}</p>
-
+      <Motivation paragraphs={motivation} />
+      <Overview />
       <Tour />
-
-      <Card>
-        <CardHeader title="이 주제를 고른 이유" />
-        <div className="space-y-2 leading-relaxed text-ink-2">
-          {motivation.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
-        </div>
-      </Card>
-
-      <section>
-        <h3 className="text-sm font-semibold">분석 관점</h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          {questions.map((q) => (
-            <Card key={q.name}>
-              <p className="font-semibold">
-                {q.name} <span className="text-sm font-normal text-ink-3">{q.en}</span>
-              </p>
-              <p className="mt-1 text-sm text-ink-2">{q.desc}</p>
-            </Card>
-          ))}
-        </div>
-      </section>
 
       <Hypotheses active={hash} />
 
       <section>
-        <h3 className="text-sm font-semibold">링크</h3>
+        <SectionTitle>링크</SectionTitle>
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <LinkCard label="GitHub 저장소" href={links.github} hint="소스 코드와 실험 코드" />
           <LinkCard label="보고서 (PDF)" href={links.report} hint="분석 결과와 단계별 설명" />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { getAlgorithm, type AlgorithmId, type Counters, type Trace } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
@@ -11,6 +11,7 @@ import Pseudocode from '../components/Pseudocode'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
 import { Button, Card, CardHeader, IntInput, Segmented, Select } from '../components/ui'
+import { log } from '../console'
 import { fmtNum } from '../format'
 import { useAlgorithmParam } from '../useAlgorithmParam'
 
@@ -85,12 +86,12 @@ export default function VisualizeScreen() {
       </div>
 
       {/* 알고리즘·크기·시드가 바뀌면 재생 상태를 처음부터 다시 시작한다 */}
-      <Player key={`${id}-${n}-${seed}`} id={id} initial={initial} trace={trace} />
+      <Player key={`${id}-${n}-${seed}`} id={id} seed={seed} initial={initial} trace={trace} />
     </div>
   )
 }
 
-function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; trace: Trace<number> }) {
+function Player({ id, seed, initial, trace }: { id: AlgorithmId; seed: number; initial: number[]; trace: Trace<number> }) {
   const [index, setIndex] = useState(0)
   const [playRequested, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
@@ -105,6 +106,17 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
   const content = algorithmContent[id]
   const isPickRemove = id === 'pick-remove'
   const isRiffle = id === 'riffle'
+
+  // 지금 보고 있는 단계를 콘솔에 남긴다 (StrictMode의 두 번 실행에도 한 번만)
+  const loggedIndex = useRef<number>(undefined)
+  useEffect(() => {
+    if (loggedIndex.current === index) return
+    loggedIndex.current = index
+    if (index === 0) log('C 시각화', `${algo.name} · 원소 ${initial.length}개 · 시드 ${seed} → 단계 ${last + 1}개`)
+    const counters = visibleCounters[id].map((k) => `${counterLabels[k]} ${step.counters[k]}`).join(' · ')
+    const arrays = step.output ? `결과 [${step.output.join(', ')}] · 남은 [${step.array.join(', ')}]` : `[${step.array.join(', ')}]`
+    log('C 시각화', `#${index} ${step.kind}  ${step.what}\n  ${arrays}\n  ${counters}`, step.kind === 'done' ? 'result' : 'step')
+  }, [index, algo.name, initial.length, seed, last, id, step])
 
   useEffect(() => {
     if (!playing) return

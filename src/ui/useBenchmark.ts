@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import type { AlgorithmId } from '../core/algorithms'
 import type { BenchPoint } from '../core/benchmark'
+import { getAlgorithm } from '../core/algorithms'
+import { log, rngName } from './console'
+import { fmtInt, fmtNum, fmtTime } from './format'
 import { recordPerformance, type PerformanceEntry } from './results'
 import type { BenchRequest, BenchResponse } from '../workers/bench.worker'
 
@@ -52,11 +55,29 @@ export function useBenchmark() {
     const id = ++jobId.current
     setState({ ...initial, config, status: 'running', hiddenDuringRun: document.hidden })
     const points: BenchPoint[] = []
+    log(
+      '효율성',
+      `실행 시간 측정 시작: ${config.algoIds.map((a) => getAlgorithm(a).name).join(', ')}\n` +
+        `크기 ${fmtInt(config.sizes[0])}~${fmtInt(config.sizes.at(-1)!)} (2배씩) · 크기마다 ${config.samples}회 측정 중앙값 · 난수 ${rngName[config.rngKind]}`,
+    )
     const w = new Worker(new URL('../workers/bench.worker.ts', import.meta.url), { type: 'module' })
     w.onmessage = (e: MessageEvent<BenchResponse>) => {
       const msg = e.data
       if (msg.jobId !== jobId.current) return
-      if (msg.type === 'point') points.push(msg.point)
+      if (msg.type === 'point') {
+        const p = msg.point
+        const prev = points.findLast((q) => q.algoId === p.algoId)
+        const ratio = prev && p.n === prev.n * 2 ? ` · 이전 크기의 ${fmtNum(p.medianMs / prev.medianMs, 2)}배` : ''
+        log(
+          '효율성',
+          `${getAlgorithm(p.algoId).name} n = ${fmtInt(p.n)}: 1회 ${fmtTime(p.medianMs)} (원소당 ${fmtTime(p.medianMs / p.n)}, 배치 ${fmtInt(p.batch)}개)${ratio}`,
+          'step',
+        )
+        points.push(p)
+      }
+      if (msg.type === 'skipped')
+        log('효율성', `${getAlgorithm(msg.algoId).name}: 중앙값이 ${config.budgetMs}ms를 넘어 n = ${fmtInt(msg.fromN)}부터는 건너뛰어요.`, 'warn')
+      if (msg.type === 'error') log('효율성', `오류 — ${msg.message}`, 'warn')
       // 끝까지 측정한 결과만 G 전체 비교 화면에 기록한다 (취소·오류는 남기지 않음)
       if (msg.type === 'done') {
         const entries: Partial<Record<AlgorithmId, Omit<PerformanceEntry, 'at'>>> = {}
@@ -65,6 +86,7 @@ export function useBenchmark() {
           if (own.length) entries[id] = { samples: config.samples, rngKind: config.rngKind, points: own }
         }
         recordPerformance(entries)
+        log('효율성', '실행 시간 측정이 끝났어요.', 'result')
       }
       setState((s) => {
         switch (msg.type) {
@@ -95,6 +117,7 @@ export function useBenchmark() {
   }
 
   const cancel = () => {
+    if (worker.current) log('효율성', '실행 시간 측정을 취소했어요.', 'warn')
     stop()
     jobId.current++
     setState((s) => ({ ...s, measuring: undefined, status: 'cancelled' }))

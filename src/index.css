@@ -9,6 +9,7 @@
  * - 동작 역할 색: C 화면의 i, j. 알고리즘 색과 겹치지 않는 보라·자홍 (색약 검사 통과).
  *   위치가 확정된 칸은 색 대신 중립 톤 + ✓ 표시로 구분한다.
  * - 상태 색: 균등 / 비균등 / 주의. 이 용도로만 쓴다.
+ * - 콘솔 색: 오른쪽 콘솔 창. 테마와 무관하게 항상 검은 바탕에 흰 글씨다.
  */
 
 :root {
@@ -98,7 +99,25 @@
   --warn-soft: #fef3c7;
 }
 
+/* 콘솔은 두 테마에서 같은 색을 쓴다 */
+:root {
+  --console-bg: #050607;
+  --console-line: #24282e;
+  --console-ink: #f3f4f6;
+  --console-ink-2: #c4c8ce;
+  --console-ink-3: #7d848d;
+  --console-accent: #8fd3a8;
+  --console-warn: #f2c66d;
+}
+
 @theme inline {
+  --color-console-bg: var(--console-bg);
+  --color-console-line: var(--console-line);
+  --color-console-ink: var(--console-ink);
+  --color-console-ink-2: var(--console-ink-2);
+  --color-console-ink-3: var(--console-ink-3);
+  --color-console-accent: var(--console-accent);
+  --color-console-warn: var(--console-warn);
   --font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -136,6 +155,16 @@
 
 body {
   @apply bg-bg font-sans text-ink antialiased;
+  /* 한국어는 글자 단위가 아니라 띄어쓰기 단위로 줄을 바꾼다 ("불일치(D)" / "로 세요."처럼 갈라지지 않게).
+     띄어쓰기 없이 긴 문자열(주소 등)은 넘치지 않도록 그 안에서 끊는다. */
+  word-break: keep-all;
+  overflow-wrap: break-word;
+}
+
+/* 마지막 줄에 단어 하나만 남지 않게 줄 길이를 고르게 나눈다 (지원하지 않는 브라우저는 무시) */
+p,
+li {
+  text-wrap: pretty;
 }
 
 /* 키보드로 이동할 때만 포커스 테두리를 보여준다 */

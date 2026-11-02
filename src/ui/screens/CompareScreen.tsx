@@ -4,35 +4,67 @@ import { Bar, BarChart, CartesianGrid, Cell, LabelList, ResponsiveContainer, Too
 import { algorithms, type AlgorithmId } from '../../core/algorithms'
 import { powerOfTwoSizes } from '../../core/benchmark'
 import { DIST_RUNS, DIST_SEED_OFFSET, repeatKendall } from '../../core/relationship'
-import { seededRng } from '../../core/rng'
+import { seededRng, type RngKind } from '../../core/rng'
+import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
 import HypothesisNote from '../components/HypothesisNote'
 import ScreenHeader from '../components/ScreenHeader'
 import UniformBadge from '../components/UniformBadge'
-import { Button, Callout, Card, CardHeader, Progress, Table, tbody, td, th, thead } from '../components/ui'
+import { Button, Callout, Card, CardHeader, IntInput, Progress, Select, SettingRow, Table, tbody, td, th, thead } from '../components/ui'
 import { algoColor, chart, tooltipStyle } from '../chartTheme'
-import { fmtInt, fmtNum, fmtPct } from '../format'
+import { fmtInt, fmtNum, fmtPct, fmtTime } from '../format'
+import { log } from '../console'
 import { clearResults, recordRelationship, useResults, type PerformanceEntry, type Results } from '../results'
 import { BENCH_BUDGET_MS, BENCH_MIN_EXP, useBenchmark } from '../useBenchmark'
 import { useExperiment } from '../useExperiment'
 
-// 표준 조건: D·E·F 화면의 추천 설정과 같은 값이라 화면별 결과와 그대로 비교할 수 있다
-const STD = {
-  relationship: { n: 8, seed: 1 },
-  uniformity: { n: 4, trials: 1_000_000, seed: 1 },
-  performance: { maxExp: 14, samples: 5 },
+type Part = 'relationship' | 'uniformity' | 'performance'
+
+interface Settings {
+  algoIds: AlgorithmId[]
+  parts: Record<Part, boolean>
+  relN: number
+  relRuns: number
+  uniN: number
+  trials: number
+  maxExp: number
+  samples: number
+  rngKind: RngKind
+  seed: number
 }
+
+// 표준 조건: D·E·F 화면의 추천 설정과 같은 값이라 화면별 결과와 그대로 비교할 수 있다
+const STD: Settings = {
+  algoIds: algorithms.map((a) => a.id),
+  parts: { relationship: true, uniformity: true, performance: true },
+  relN: 8,
+  relRuns: DIST_RUNS,
+  uniN: 4,
+  trials: 1_000_000,
+  maxExp: 14,
+  samples: 5,
+  rngKind: 'seeded',
+  seed: 1,
+}
+
+// 선택지는 D·E·F 화면과 같게 둔다
+const REL_RUNS = [500, DIST_RUNS, 10_000]
+const TRIALS = [1_000, 10_000, 100_000, 1_000_000]
+const MAX_EXPS = [14, 16, 18, 20]
+const SAMPLES = [5, 9, 15]
+const RNG_OPTIONS: { kind: RngKind; label: string }[] = [
+  { kind: 'seeded', label: '시드 고정 (SFC32)' },
+  { kind: 'math', label: 'Math.random' },
+  { kind: 'crypto', label: 'crypto (암호학적)' },
+]
+
+const ints = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, k) => from + k)
+const sameSettings = (a: Settings, b: Settings) => JSON.stringify(a) === JSON.stringify(b)
 
 const shortName: Record<AlgorithmId, string> = {
   'fisher-yates': 'Fisher–Yates',
   'pick-remove': 'Pick & Remove',
   riffle: 'Riffle',
   'random-key': 'Random-Key',
-}
-
-function fmtTime(ms: number) {
-  if (ms < 0.001) return `${(ms * 1e6).toFixed(0)} ns`
-  if (ms < 1) return `${(ms * 1e3).toFixed(ms < 0.01 ? 2 : 1)} µs`
-  return `${ms.toFixed(ms < 10 ? 2 : 1)} ms`
 }
 
 const rngLabel = { seeded: '시드 고정', math: 'Math.random', crypto: 'crypto' } as const
@@ -61,35 +93,60 @@ export default function CompareScreen() {
   const results = useResults()
   const experiment = useExperiment()
   const bench = useBenchmark()
-  const [ranAll, setRanAll] = useState(false)
+  const [settings, setSettings] = useState<Settings>(STD)
+  const [lastRun, setLastRun] = useState<Settings>()
+  const ranAll = lastRun !== undefined
   const phase = experiment.running ? 'uniformity' : bench.status === 'running' ? 'performance' : undefined
   const running = phase !== undefined
+  const isStd = sameSettings(settings, STD)
+  const canRun = settings.algoIds.length > 0 && Object.values(settings.parts).some(Boolean)
 
-  // 1) 관계성은 바로 계산하고 2) 균등성 실험(Worker 병렬) 3) 성능 측정(Worker 하나) 순서로 돌린다.
+  const update = (patch: Partial<Settings>) => setSettings((s) => ({ ...s, ...patch }))
+  const togglePart = (part: Part, on: boolean) => setSettings((s) => ({ ...s, parts: { ...s.parts, [part]: on } }))
+
+  // 1) 관계성은 바로 계산하고 2) 균등성 실험(Worker 병렬) 3) 효율성 측정(Worker 하나) 순서로 돌린다.
   // 성능 측정은 다른 실험과 CPU를 나눠 쓰면 시간이 흔들리므로 균등성 실험이 끝난 뒤에 시작한다.
   const runAll = () => {
-    const values = Array.from({ length: STD.relationship.n }, (_, k) => String(k + 1))
-    for (const a of algorithms) {
-      const s = repeatKendall(values, a.shuffle, seededRng(STD.relationship.seed + DIST_SEED_OFFSET), DIST_RUNS)
-      recordRelationship(a.id, { n: values.length, seed: STD.relationship.seed, ...s })
-    }
-    setRanAll(true)
-    experiment.start({ algoIds: algorithms.map((a) => a.id), rngKind: 'seeded', ...STD.uniformity }, () =>
-      bench.start({
-        algoIds: algorithms.map((a) => a.id),
-        sizes: powerOfTwoSizes(BENCH_MIN_EXP, STD.performance.maxExp),
-        samples: STD.performance.samples,
-        rngKind: 'seeded',
-        seed: 1,
-        budgetMs: BENCH_BUDGET_MS,
-      }),
+    const s = settings
+    const algos = algorithms.filter((a) => s.algoIds.includes(a.id))
+    const parts = (['relationship', 'uniformity', 'performance'] as const).filter((p) => s.parts[p])
+    log(
+      'G 전체 비교',
+      `측정 시작 (${sameSettings(s, STD) ? '표준 조건' : '사용자 설정'}): ${parts.map((p) => ({ relationship: '관계성', uniformity: '균등성', performance: '효율성' })[p]).join(' → ')}`,
     )
+    if (s.parts.relationship) {
+      const values = Array.from({ length: s.relN }, (_, k) => String(k + 1))
+      for (const a of algos) {
+        const r = repeatKendall(values, a.shuffle, seededRng(s.seed + DIST_SEED_OFFSET), s.relRuns)
+        recordRelationship(a.id, { n: values.length, seed: s.seed, ...r })
+        log(
+          '관계성',
+          `${a.name}: 원소 ${s.relN}개를 ${fmtInt(s.relRuns)}번 섞기 → 평균 R ${fmtNum(r.meanR)} · R ≥ 0.5 ${fmtPct(r.highR)}`,
+          'result',
+        )
+      }
+    }
+    const measurePerformance = () => {
+      if (!s.parts.performance) return
+      bench.start({
+        algoIds: s.algoIds,
+        sizes: powerOfTwoSizes(BENCH_MIN_EXP, s.maxExp),
+        samples: s.samples,
+        rngKind: s.rngKind,
+        seed: s.seed,
+        budgetMs: BENCH_BUDGET_MS,
+      })
+    }
+    setLastRun(s)
+    if (s.parts.uniformity) {
+      experiment.start({ algoIds: s.algoIds, n: s.uniN, trials: s.trials, rngKind: s.rngKind, seed: s.seed }, measurePerformance)
+    } else measurePerformance()
   }
 
   const cancel = () => {
     experiment.cancel()
     bench.cancel()
-    setRanAll(false)
+    setLastRun(undefined)
   }
 
   const { relationship: rel, uniformity: uni, performance: perf } = results
@@ -98,16 +155,18 @@ export default function CompareScreen() {
   const timeAt = (id: AlgorithmId) => perf[id]?.points.find((p) => p.n === sizeN)?.medianMs
   const fyTime = timeAt('fisher-yates')
 
+  // 진행률: 이번 실행에서 Worker로 도는 항목(균등성·효율성)끼리 나눠 보여준다
+  const run = lastRun ?? settings
+  const uniShare = run.parts.uniformity ? (run.parts.performance ? 0.5 : 1) : 0
   const progress =
     phase === 'uniformity'
-      ? Object.values(experiment.runs).reduce((s, r) => s + (r?.done ?? 0), 0) /
-        (algorithms.length * STD.uniformity.trials) /
-        2
+      ? (Object.values(experiment.runs).reduce((s, r) => s + (r?.done ?? 0), 0) / (run.algoIds.length * run.trials)) * uniShare
       : phase === 'performance'
-        ? 0.5 + bench.points.length / (algorithms.length * (STD.performance.maxExp - BENCH_MIN_EXP + 1)) / 2
+        ? uniShare +
+          (bench.points.length / (run.algoIds.length * (run.maxExp - BENCH_MIN_EXP + 1))) * (1 - uniShare)
         : 1
 
-  const relDiff = distinct(Object.values(rel).map((e) => `원소 ${e!.n}개 · 시드 ${e!.seed}`))
+  const relDiff = distinct(Object.values(rel).map((e) => `원소 ${e!.n}개 · ${fmtInt(e!.runs)}번 · 시드 ${e!.seed}`))
   const uniDiff = distinct(
     Object.values(uni).map((e) => `n = ${e!.n} · ${fmtInt(e!.trials)}회 · ${rngLabel[e!.rngKind]} · 시드 ${e!.seed}`),
   )
@@ -118,32 +177,131 @@ export default function CompareScreen() {
       <ScreenHeader
         id="compare"
         title="전체 비교"
-        desc="D 관계성 · E 균등성 · F 성능 화면에서 잰 결과를 알고리즘별로 모아 나란히 놓아요. 알고리즘마다 가장 최근에 잰 값을 보여주고, 측정 조건도 함께 적어요."
+        desc="D 관계성 · E 균등성 · F 효율성 화면에서 잰 결과를 알고리즘별로 모아 나란히 놓아요. 알고리즘마다 가장 최근에 잰 값을 보여주고, 측정 조건도 함께 적어요."
       />
 
-      <Card className="space-y-3">
+      <Card className="space-y-5">
         <CardHeader
-          title="표준 조건으로 한 번에 측정"
-          desc={
-            <>
-              네 알고리즘을 같은 조건으로 재요. 관계성: 원소 {STD.relationship.n}개를 {fmtInt(DIST_RUNS)}번 섞기 · 균등성: n ={' '}
-              {STD.uniformity.n}, {fmtInt(STD.uniformity.trials)}회 · 성능: {fmtInt(2 ** BENCH_MIN_EXP)}~
-              {fmtInt(2 ** STD.performance.maxExp)}, {STD.performance.samples}회 측정 중앙값. 모두 시드 1이에요.
-            </>
+          title={
+            <span className="flex items-center gap-2">
+              측정 설정
+              <span className="rounded bg-surface-3 px-1.5 py-0.5 text-xs font-medium text-ink-2">
+                {isStd ? '표준 조건' : '사용자 설정'}
+              </span>
+            </span>
+          }
+          desc="표준 조건은 D·E·F 화면의 추천 설정과 같아서 화면별 결과와 그대로 비교할 수 있어요. 필요하면 조건을 바꿔서 재요."
+          right={
+            <Button size="sm" variant="ghost" onClick={() => setSettings(STD)} disabled={running || isStd}>
+              표준 조건으로 되돌리기
+            </Button>
           }
         />
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="primary" onClick={runAll} disabled={running}>
-            {running ? '측정 중…' : '모두 측정'}
+
+        <fieldset disabled={running} className="space-y-5">
+          <SettingRow label="알고리즘">
+            <AlgorithmMultiPicker value={settings.algoIds} onChange={(algoIds) => update({ algoIds })} />
+          </SettingRow>
+
+          <div className="grid gap-3 lg:grid-cols-3">
+            <PartBox
+              letter="D"
+              title="관계성"
+              desc="같은 입력을 여러 번 섞어 원본 순서와 닮은 정도(τ)를 재요."
+              checked={settings.parts.relationship}
+              onCheck={(v) => togglePart('relationship', v)}
+            >
+              <Select
+                stacked
+                label="원소 수"
+                value={settings.relN}
+                onChange={(relN) => update({ relN })}
+                options={ints(2, 20).map((v) => ({ value: v, label: `${v}개` }))}
+              />
+              <Select
+                stacked
+                label="반복 횟수"
+                value={settings.relRuns}
+                onChange={(relRuns) => update({ relRuns })}
+                options={REL_RUNS.map((v) => ({ value: v, label: `${fmtInt(v)}번` }))}
+              />
+            </PartBox>
+            <PartBox
+              letter="E"
+              title="균등성"
+              desc="반복 실험으로 순열별 확률을 재고 균등분포와 비교해요."
+              checked={settings.parts.uniformity}
+              onCheck={(v) => togglePart('uniformity', v)}
+            >
+              <Select
+                stacked
+                label="원소 수"
+                value={settings.uniN}
+                onChange={(uniN) => update({ uniN })}
+                options={ints(3, 5).map((v) => ({ value: v, label: `${v}개` }))}
+              />
+              <Select
+                stacked
+                label="반복 횟수"
+                value={settings.trials}
+                onChange={(trials) => update({ trials })}
+                options={TRIALS.map((v) => ({ value: v, label: `${fmtInt(v)}회` }))}
+              />
+            </PartBox>
+            <PartBox
+              letter="F"
+              title="효율성"
+              desc={`배열 크기를 ${fmtInt(2 ** BENCH_MIN_EXP)}부터 두 배씩 늘리며 실행 시간을 재요.`}
+              checked={settings.parts.performance}
+              onCheck={(v) => togglePart('performance', v)}
+            >
+              <Select
+                stacked
+                label="최대 크기"
+                value={settings.maxExp}
+                onChange={(maxExp) => update({ maxExp })}
+                options={MAX_EXPS.map((e) => ({ value: e, label: `${fmtInt(2 ** e)}개` }))}
+              />
+              <Select
+                stacked
+                label="측정 횟수 (중앙값)"
+                value={settings.samples}
+                onChange={(samples) => update({ samples })}
+                options={SAMPLES.map((v) => ({ value: v, label: `${v}회` }))}
+              />
+            </PartBox>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[14rem_9rem_minmax(0,1fr)] sm:items-end">
+            <Select
+              stacked
+              label="난수"
+              value={settings.rngKind}
+              onChange={(rngKind) => update({ rngKind })}
+              options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
+            />
+            <IntInput stacked label="시드" value={settings.seed} onChange={(seed) => update({ seed })} />
+            <p className="pb-2 text-xs leading-relaxed text-ink-3">
+              난수 종류는 균등성·효율성에 적용돼요. 관계성은 D 화면처럼 항상 시드 고정 난수를 써요.
+            </p>
+          </div>
+        </fieldset>
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <Button variant="primary" onClick={runAll} disabled={running || !canRun}>
+            {running ? '측정 중…' : '측정 시작'}
           </Button>
           {running && <Button onClick={cancel}>취소</Button>}
           {running && (
             <>
               <Progress value={progress} />
-              <span className="text-sm text-ink-2">{phase === 'uniformity' ? '균등성 실험 중' : '성능 측정 중'}</span>
+              <span className="text-sm text-ink-2">{phase === 'uniformity' ? '균등성 실험 중' : '효율성 측정 중'}</span>
             </>
           )}
-          {ranAll && !running && bench.status === 'done' && <span className="text-sm text-ink-2">측정 완료</span>}
+          {ranAll && !running && (!lastRun?.parts.performance || bench.status === 'done') && (
+            <span className="text-sm text-ink-2">측정 완료</span>
+          )}
+          {!canRun && <span className="text-sm text-ink-3">알고리즘과 측정 항목을 하나 이상 골라요.</span>}
           <div className="ml-auto">
             <Button size="sm" onClick={clearResults} disabled={running || empty}>
               결과 지우기
@@ -152,21 +310,21 @@ export default function CompareScreen() {
         </div>
         {bench.hiddenDuringRun && bench.status !== 'idle' && (
           <Callout tone="warn">
-            ⚠ 성능을 재는 중에 이 탭이 화면에서 숨겨진 적이 있어요. 시간이 실제보다 크게 나왔을 수 있으니 탭을 띄워 둔 채로
+            ⚠ 실행 시간을 재는 중에 이 탭이 화면에서 숨겨진 적이 있어요. 시간이 실제보다 크게 나왔을 수 있으니 탭을 띄워 둔 채로
             다시 재 주세요.
           </Callout>
         )}
         <p className="text-xs text-ink-3">
-          D·E·F 화면에서 직접 잰 결과도 여기에 모여요. 결과는 이 브라우저에 저장돼요. 성능을 재는 동안에는 이 탭을 화면에
+          D·E·F 화면에서 직접 잰 결과도 여기에 모여요. 결과는 이 브라우저에 저장돼요. 실행 시간을 재는 동안에는 이 탭을 화면에
           띄워 두세요.
         </p>
       </Card>
 
       {empty ? (
         <p className="rounded-xl border border-dashed border-line-strong p-6 text-sm text-ink-3">
-          아직 측정한 결과가 없어요. "모두 측정"을 누르거나{' '}
+          아직 측정한 결과가 없어요. "측정 시작"을 누르거나{' '}
           <ScreenLink to="/relationship">D 관계성</ScreenLink>, <ScreenLink to="/uniformity">E 균등성</ScreenLink>,{' '}
-          <ScreenLink to="/performance">F 성능</ScreenLink> 화면에서 실험을 돌려요.
+          <ScreenLink to="/performance">F 효율성</ScreenLink> 화면에서 실험을 돌려요.
         </p>
       ) : (
         <>
@@ -217,8 +375,8 @@ export default function CompareScreen() {
                         {a.name}
                       </span>
                     </td>
-                    <td className={td}>{a.time}</td>
-                    <td className={td}>{a.space}</td>
+                    <td className={`${td} whitespace-nowrap`}>{a.time}</td>
+                    <td className={`${td} whitespace-nowrap`}>{a.space}</td>
                     <td className={`${td} font-sans`}>
                       <UniformBadge uniform={a.uniform} />
                     </td>
@@ -311,7 +469,7 @@ export default function CompareScreen() {
                   <span className="font-mono">{fmtNum(lastRatio(perf['pick-remove']!) ?? NaN, 2)}</span>.
                 </>
               ) : (
-                <>Fisher–Yates와 Pick & Remove의 성능 결과가 모이면 여기서 비교해요.</>
+                <>Fisher–Yates와 Pick & Remove의 효율성 결과가 모이면 여기서 비교해요.</>
               )}
             </HypothesisNote>
             <HypothesisNote id={3}>
@@ -336,6 +494,56 @@ export default function CompareScreen() {
 function range<E>(rec: Partial<Record<AlgorithmId, E>>, value: (e: E) => number, digits: number): string {
   const vs = Object.values(rec).map((e) => value(e as E))
   return `${fmtNum(Math.min(...vs), digits)} ~ ${fmtNum(Math.max(...vs), digits)}`
+}
+
+/** 측정 항목 하나의 설정 상자. 스위치를 끄면 이번 측정에서 빼고 설정을 흐리게 보여준다. */
+function PartBox({
+  letter,
+  title,
+  desc,
+  checked,
+  onCheck,
+  children,
+}: {
+  letter: string
+  title: string
+  desc: string
+  checked: boolean
+  onCheck: (v: boolean) => void
+  children: ReactNode
+}) {
+  return (
+    <div
+      className={`flex flex-col rounded-xl border p-4 transition-colors ${
+        checked ? 'border-line-strong bg-surface-2' : 'border-dashed border-line bg-surface'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 font-semibold">
+          <span className="grid h-6 w-6 place-items-center rounded-md bg-surface-3 font-mono text-xs text-ink-2">{letter}</span>
+          {title}
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={checked}
+          aria-label={`${title} 측정에 포함`}
+          onClick={() => onCheck(!checked)}
+          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-surface-3'}`}
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-surface shadow transition-transform ${
+              checked ? 'translate-x-4' : ''
+            }`}
+          />
+        </button>
+      </div>
+      <p className={`mt-1.5 text-xs leading-relaxed text-ink-3 ${checked ? '' : 'opacity-60'}`}>{desc}</p>
+      <fieldset disabled={!checked} className={`mt-4 grid grid-cols-2 gap-3 ${checked ? '' : 'opacity-40'}`}>
+        {children}
+      </fieldset>
+    </div>
+  )
 }
 
 function GroupTh({ span, children }: { span: number; children: ReactNode }) {

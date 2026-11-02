@@ -93,7 +93,7 @@ export const screenMeta: ScreenMeta[] = [
     id: 'performance',
     path: '/performance',
     letter: 'F',
-    name: '성능',
+    name: '효율성',
     subtitle: '얼마나 빠른가',
     goals: [
       '배열 크기를 두 배씩 늘리며 셔플 1회의 실행 시간을 재요.',
@@ -109,7 +109,7 @@ export const screenMeta: ScreenMeta[] = [
     name: '전체 비교',
     subtitle: '측정 결과 한눈에',
     goals: [
-      'D·E·F 화면에서 잰 효율성·균등성·관계성 결과를 알고리즘별로 나란히 비교해요.',
+      'D·E·F 화면에서 잰 관계성·균등성·효율성 결과를 알고리즘별로 나란히 비교해요.',
       '알고리즘마다 측정 조건이 같은지 확인하고, 다르면 표준 조건으로 한 번에 다시 재요.',
     ],
     hypotheses: [1, 2, 3],

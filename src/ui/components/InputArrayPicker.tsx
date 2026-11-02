@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { parseCustom, randomDistinctValues } from '../inputArray'
-import { Button, Segmented, Select } from './ui'
+import { Button, controlClass, Segmented, Select } from './ui'
 
 type Mode = 'random' | 'custom'
 
 /**
  * 입력 배열을 고르는 컨트롤. 랜덤 배열(서로 다른 정수) 또는 직접 입력.
- * 유효한 배열이 정해질 때만 onChange를 부른다.
+ * 유효한 배열이 정해질 때만 onChange를 부른다. 이름표("입력 배열")는 쓰는 쪽이 붙인다.
  */
 export default function InputArrayPicker({
   value,
@@ -31,9 +31,8 @@ export default function InputArrayPicker({
   }
 
   return (
-    <div className="space-y-2 text-sm">
+    <div className="space-y-2.5 text-sm">
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-ink-2">입력 배열</span>
         <Segmented
           ariaLabel="입력 배열 방식"
           value={mode}
@@ -56,7 +55,7 @@ export default function InputArrayPicker({
               onChange={(n) => onChange(randomDistinctValues(n))}
               options={Array.from({ length: maxN - minN + 1 }, (_, k) => ({ value: k + minN, label: String(k + minN) }))}
             />
-            <Button size="sm" onClick={() => onChange(randomDistinctValues(value.length))}>
+            <Button onClick={() => onChange(randomDistinctValues(value.length))} className="h-9">
               새 배열
             </Button>
           </>
@@ -71,9 +70,7 @@ export default function InputArrayPicker({
             placeholder="예: 3, 8, 1, 5, 9"
             aria-invalid={error !== undefined}
             aria-describedby="input-array-help"
-            className={`w-full rounded-md border bg-surface px-3 py-1.5 font-mono text-ink ${
-              error ? 'border-bad' : 'border-line-strong'
-            }`}
+            className={`${controlClass} w-full px-3 font-mono ${error ? 'border-bad hover:border-bad' : ''}`}
           />
           <p id="input-array-help" className={`mt-1 text-xs ${error ? 'text-bad' : 'text-ink-3'}`}>
             {error ?? `쉼표나 공백으로 구분해 서로 다른 원소 ${minN}~${maxN}개를 입력해요. 숫자가 아니어도 돼요.`}
@@ -81,7 +78,9 @@ export default function InputArrayPicker({
         </div>
       )}
 
-      <p className="font-mono text-xs text-ink-3">[{value.join(', ')}]</p>
+      <p className="inline-block max-w-full rounded-md bg-surface-2 px-2.5 py-1 font-mono text-xs text-ink-2">
+        [{value.join(', ')}]
+      </p>
     </div>
   )
 }

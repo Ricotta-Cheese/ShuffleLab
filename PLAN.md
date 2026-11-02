@@ -32,7 +32,7 @@ src/
     stats/       Kendall τ·R, Spearman ρ, 순열 인덱싱, TVD·U, 정확 분포 열거
   workers/       반복 실험, 벤치마크 (UI 멈춤 방지)
   ui/
-    screens/     A 설명 / B 알고리즘 / C 동작 시각화 / D 관계성 / E 균등성 / F 성능 / G 전체 비교
+    screens/     A 설명 / B 알고리즘 / C 동작 시각화 / D 관계성 / E 균등성 / F 효율성 / G 전체 비교
   content/       A 설명 화면 문구와 링크 (description.ts)
     components/  배열 뷰, 단계 컨트롤, 다이어그램 내보내기, 차트
 ```
