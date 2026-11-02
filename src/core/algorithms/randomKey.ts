@@ -1,5 +1,5 @@
 import type { Rng } from '../rng'
-import { createRecorder, fmt } from './recorder'
+import { createRecorder, fmt, range } from './recorder'
 import type { Algorithm, Trace } from './types'
 
 /*
@@ -77,7 +77,7 @@ export function traceRandomKey<T>(input: readonly T[], rng: Rng): Trace<T> {
     kind: 'done',
     array: result,
     keys: sortedKeys,
-    fixed: [],
+    fixed: range(0, n),
     what: '셔플 완료',
     why: `비교 정렬을 쓰므로 시간은 O(n log n)이고, 키와 정렬용 배열에 O(n) 추가 공간이 든다.`,
   })
