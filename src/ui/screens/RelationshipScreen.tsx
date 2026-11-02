@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
-import { getAlgorithm } from '../../core/algorithms'
+import { getAlgorithm, type AlgorithmId } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
 import { kendall, originalPositions } from '../../core/stats/kendall'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import InputArrayPicker from '../components/InputArrayPicker'
 import Metric from '../components/Metric'
 import UniformBadge from '../components/UniformBadge'
-import { chart } from '../chartTheme'
+import { Button, Card, CardHeader, IntInput, PageHeader, Table, tbody, td, th, thead } from '../components/ui'
+import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtNum, fmtPct } from '../format'
 import { randomDistinctValues } from '../inputArray'
 import { useAlgorithmParam } from '../useAlgorithmParam'
@@ -35,114 +36,113 @@ export default function RelationshipScreen() {
 
   return (
     <div className="space-y-5">
-      <section>
-        <h2 className="text-xl font-bold">관계성 분석</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 측정한다. 원소 쌍마다 원본과 앞뒤 순서가
-          같으면 일치(C), 반대면 불일치(D)로 센다.
-        </p>
-      </section>
+      <PageHeader
+        eyebrow="D · 관계성"
+        title="관계성 분석"
+        desc="한 번 섞은 결과가 원본의 순서와 얼마나 관계있는지 Kendall's τ로 측정한다. 원소 쌍마다 원본과 앞뒤 순서가 같으면 일치(C), 반대면 불일치(D)로 센다."
+      />
 
-      <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+      <Card className="space-y-4">
         <AlgorithmPicker value={id} onChange={setId} />
         <InputArrayPicker value={values} onChange={setValues} minN={MIN_N} maxN={MAX_N} />
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          <label className="flex items-center gap-2">
-            시드
-            <input
-              type="number"
-              min={1}
-              value={seed}
-              onChange={(e) => setSeed(Math.max(1, Math.floor(Number(e.target.value)) || 1))}
-              className="w-24 rounded-md border border-slate-300 bg-white px-2 py-1 font-mono"
-            />
-          </label>
-          <button
-            onClick={() => setSeed(1 + Math.floor(Math.random() * 999_999))}
-            className="rounded-md bg-slate-900 px-3 py-1 font-medium text-white hover:bg-slate-700"
-          >
+          <IntInput label="시드" value={seed} onChange={setSeed} />
+          <Button variant="primary" size="sm" onClick={() => setSeed(1 + Math.floor(Math.random() * 999_999))}>
             다시 섞기
-          </button>
-          <span className="flex items-center gap-2 text-slate-500">
+          </Button>
+          <span className="flex items-center gap-2 text-ink-3">
             {algo.name} <UniformBadge uniform={algo.uniform} />
           </span>
         </div>
-      </section>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-sm font-semibold">원소별 위치 이동</h3>
-          <p className="mt-1 text-xs text-slate-500">위 줄은 원본, 아래 줄은 결과다. 선은 같은 원소를 잇는다.</p>
-          <MovementDiagram values={values} shuffled={shuffled} newPos={newPos} />
-        </section>
+        <Card>
+          <CardHeader title="원소별 위치 이동" desc="위 줄은 원본, 아래 줄은 결과다. 선은 같은 원소를 잇는다." />
+          <MovementDiagram values={values} shuffled={shuffled} newPos={newPos} algoId={id} />
+        </Card>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-sm font-semibold">이번 결과의 관계성</h3>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+        <Card>
+          <CardHeader title="이번 결과의 관계성" />
+          <div className="grid grid-cols-2 gap-3">
             <Metric label="Kendall's τ" value={fmtNum(rel.tau)} />
             <Metric label="관계성 지수 R = |τ|" value={fmtNum(rel.r)} />
             <Metric label="순서 유지 쌍 C" value={String(rel.concordant)} />
             <Metric label="순서 뒤집힌 쌍 D" value={String(rel.discordant)} />
           </div>
-          <p className="mt-3 font-mono text-xs text-slate-600">
+          <p className="mt-3 font-mono text-xs text-ink-2">
             τ = (C − D) / (C + D) = ({rel.concordant} − {rel.discordant}) / {rel.concordant + rel.discordant}
           </p>
-          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          <p className="mt-3 text-xs leading-relaxed text-ink-3">
             τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서, 0은 일치·불일치 쌍이 같은 수다. R은 원본 순서와의
             관계를 나타낼 뿐 무작위성 점수가 아니다. R = 0이어도 무작위라는 뜻은 아니고, R = 1에는 원본과 같은 경우와
             완전히 반대인 경우가 모두 포함된다.
           </p>
-        </section>
+        </Card>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-sm font-semibold">원소 쌍별 순서 비교</h3>
+        <Card>
+          <CardHeader title="원소 쌍별 순서 비교" />
           {values.length <= PAIR_GRID_MAX ? (
             <PairGrid values={values} newPos={newPos} />
           ) : (
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="text-sm text-ink-3">
               원소가 {PAIR_GRID_MAX}개 이하일 때 표시한다 (현재 쌍 {rel.concordant + rel.discordant}개).
             </p>
           )}
-        </section>
+        </Card>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h3 className="text-sm font-semibold">위치 변화</h3>
-          <div className="mt-2 max-h-80 overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-white text-left text-xs text-slate-500">
-                <tr>
-                  <th className="py-1 pr-2 font-medium">원소</th>
-                  <th className="py-1 pr-2 font-medium">원래 위치</th>
-                  <th className="py-1 pr-2 font-medium">새 위치</th>
-                  <th className="py-1 font-medium">이동</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-mono">
-                {values.map((v, o) => {
-                  const d = newPos[o] - o
-                  return (
-                    <tr key={v}>
-                      <td className="py-1 pr-2 font-sans font-medium">{v}</td>
-                      <td className="py-1 pr-2">{o}</td>
-                      <td className="py-1 pr-2">{newPos[o]}</td>
-                      <td className="py-1 text-slate-600">{d === 0 ? '제자리' : d > 0 ? `→ ${d}` : `← ${-d}`}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <div className="max-h-[26rem] overflow-auto rounded-xl">
+          <Table caption="이동: 원래 위치에서 새 위치까지 몇 칸 움직였는지 (→ 뒤로, ← 앞으로)">
+            <thead className={`${thead} sticky top-0`}>
+              <tr>
+                <th className={th}>원소</th>
+                <th className={th}>원래 위치</th>
+                <th className={th}>새 위치</th>
+                <th className={th}>이동</th>
+              </tr>
+            </thead>
+            <tbody className={`${tbody} font-mono`}>
+              {values.map((v, o) => {
+                const d = newPos[o] - o
+                return (
+                  <tr key={v}>
+                    <td className={`${td} py-1.5 font-sans font-medium`}>{v}</td>
+                    <td className={`${td} py-1.5`}>{o}</td>
+                    <td className={`${td} py-1.5`}>{newPos[o]}</td>
+                    <td className={`${td} py-1.5 text-ink-2`}>{d === 0 ? '제자리' : d > 0 ? `→ ${d}` : `← ${-d}`}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </Table>
+        </div>
       </div>
 
-      <TauDistribution values={values} seed={seed} currentTau={rel.tau} algoName={algo.name} algoShuffle={algo.shuffle} />
+      <TauDistribution
+        values={values}
+        seed={seed}
+        currentTau={rel.tau}
+        algoId={id}
+        algoName={algo.name}
+        algoShuffle={algo.shuffle}
+      />
     </div>
   )
 }
 
-function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuffled: string[]; newPos: number[] }) {
+function MovementDiagram({
+  values,
+  shuffled,
+  newPos,
+  algoId,
+}: {
+  values: string[]
+  shuffled: string[]
+  newPos: number[]
+  algoId: AlgorithmId
+}) {
   const [hover, setHover] = useState<number>()
   const n = values.length
   const slot = 56
@@ -165,8 +165,8 @@ function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuff
         width={box}
         height={36}
         rx={6}
-        fill={hover === o ? chart.series1 : '#fff'}
-        stroke={hover === o ? chart.series1 : '#cbd5e1'}
+        fill={hover === o ? algoColor[algoId] : chart.surface}
+        stroke={hover === o ? algoColor[algoId] : chart.lineMuted}
         strokeWidth={1.5}
       />
       <text
@@ -175,7 +175,7 @@ function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuff
         textAnchor="middle"
         fontSize={14}
         fontWeight={600}
-        fill={hover === o ? '#fff' : chart.text}
+        fill={hover === o ? 'var(--role-ink)' : chart.text}
       >
         {label}
       </text>
@@ -183,7 +183,7 @@ function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuff
   )
 
   return (
-    <div className="mt-3 overflow-x-auto">
+    <div className="overflow-x-auto">
       <svg viewBox={`0 0 ${W} ${bottom + 42}`} className="w-full" style={{ minWidth: Math.min(W, n * 34) }}>
         {values.map((_, o) => (
           <line
@@ -192,7 +192,7 @@ function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuff
             y1={top + 36}
             x2={cx(newPos[o])}
             y2={bottom}
-            stroke={hover === o ? chart.series1 : '#94a3b8'}
+            stroke={hover === o ? algoColor[algoId] : chart.reference}
             strokeWidth={hover === o ? 2.5 : 1.25}
             opacity={hover === undefined || hover === o ? 1 : 0.35}
           />
@@ -206,13 +206,15 @@ function MovementDiagram({ values, shuffled, newPos }: { values: string[]; shuff
 
 function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
   return (
-    <div className="mt-3 space-y-2">
-      <div className="flex gap-4 text-xs text-slate-600">
+    <div className="space-y-2">
+      <div className="flex gap-4 text-xs text-ink-2">
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: chart.series1 }} />✓ 순서 유지 (C)
+          <span className="inline-grid h-4 w-4 place-items-center rounded-sm bg-surface-3 text-[10px] text-ink">✓</span>
+          순서 유지 (C)
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: chart.series2 }} />✗ 순서 뒤집힘 (D)
+          <span className="inline-grid h-4 w-4 place-items-center rounded-sm bg-ink text-[10px] text-surface">✗</span>
+          순서 뒤집힘 (D)
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -221,7 +223,7 @@ function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
             <tr>
               <th />
               {values.map((v) => (
-                <th key={v} className="h-6 min-w-6 px-0.5 font-medium text-slate-500">
+                <th key={v} className="h-6 min-w-6 px-0.5 font-medium text-ink-3">
                   {v}
                 </th>
               ))}
@@ -230,7 +232,7 @@ function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
           <tbody>
             {values.map((a, i) => (
               <tr key={a}>
-                <th className="pr-1 text-right font-medium text-slate-500">{a}</th>
+                <th className="pr-1 text-right font-medium text-ink-3">{a}</th>
                 {values.map((b, j) => {
                   if (j <= i) return <td key={b} />
                   const kept = newPos[i] < newPos[j]
@@ -238,8 +240,7 @@ function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
                     <td
                       key={b}
                       title={`(${a}, ${b}): ${kept ? '원본처럼 ' + a + '이(가) 앞 → 일치' : b + '이(가) 앞으로 → 불일치'}`}
-                      className="h-6 min-w-6 rounded-sm text-white"
-                      style={{ background: kept ? chart.series1 : chart.series2 }}
+                      className={`h-6 min-w-6 rounded-sm ${kept ? 'bg-surface-3 text-ink' : 'bg-ink text-surface'}`}
                     >
                       {kept ? '✓' : '✗'}
                     </td>
@@ -250,7 +251,7 @@ function PairGrid({ values, newPos }: { values: string[]; newPos: number[] }) {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-ink-3">
         행의 원소가 원본에서 열의 원소보다 앞에 있다. 결과에서도 앞에 있으면 ✓, 뒤로 가면 ✗이다.
       </p>
     </div>
@@ -261,12 +262,14 @@ function TauDistribution({
   values,
   seed,
   currentTau,
+  algoId,
   algoName,
   algoShuffle,
 }: {
   values: string[]
   seed: number
   currentTau: number
+  algoId: AlgorithmId
   algoName: string
   algoShuffle: <T>(arr: T[], rng: ReturnType<typeof seededRng>) => T[]
 }) {
@@ -306,14 +309,12 @@ function TauDistribution({
 
   if (values.length < 2) return null
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold">
-        같은 입력을 {DIST_RUNS.toLocaleString()}번 섞었을 때 τ의 분포 · {algoName}
-      </h3>
-      <p className="mt-1 text-xs text-slate-500">
-        한 번의 결과만으로는 셔플의 품질을 판단할 수 없다. 올바른 셔플에서도 τ가 큰 결과가 일정 비율로 나온다.
-      </p>
-      <div className="mt-3 grid gap-4 md:grid-cols-[1fr_200px]">
+    <Card>
+      <CardHeader
+        title={`같은 입력을 ${DIST_RUNS.toLocaleString()}번 섞었을 때 τ의 분포 · ${algoName}`}
+        desc="한 번의 결과만으로는 셔플의 품질을 판단할 수 없다. 올바른 셔플에서도 τ가 큰 결과가 일정 비율로 나온다."
+      />
+      <div className="grid gap-4 md:grid-cols-[1fr_200px]">
         <div className="h-56">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats.bins} margin={{ top: 8, right: 8, bottom: 4, left: -16 }} barCategoryGap={2}>
@@ -327,15 +328,18 @@ function TauDistribution({
               />
               <YAxis tick={{ fontSize: 10, fill: chart.axis }} tickLine={false} axisLine={false} />
               <Tooltip
+                {...tooltipStyle}
+                cursor={{ fill: 'var(--surface-3)' }}
                 formatter={(v) => [`${v}회`, '실행 수']}
                 labelFormatter={(l) => stats.bins.find((x) => x.label === l)?.range ?? l}
               />
-              <Bar dataKey="count" fill={chart.series1} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill={algoColor[algoId]} radius={[4, 4, 0, 0]} />
               {currentBin && (
                 <ReferenceLine
                   x={currentBin}
-                  stroke={chart.series2}
+                  stroke={chart.ink}
                   strokeWidth={2}
+                  strokeDasharray="4 3"
                   label={{ value: '이번 결과', position: 'top', fill: chart.text, fontSize: 11 }}
                 />
               )}
@@ -347,6 +351,6 @@ function TauDistribution({
           <Metric label="R ≥ 0.5인 실행 비율" value={fmtPct(stats.highR)} />
         </div>
       </div>
-    </section>
+    </Card>
   )
 }

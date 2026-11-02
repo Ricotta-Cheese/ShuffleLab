@@ -4,7 +4,8 @@ import { algorithms, getAlgorithm, type AlgorithmId } from '../../core/algorithm
 import { doublingRatios, powerOfTwoSizes, type BenchPoint } from '../../core/benchmark'
 import type { RngKind } from '../../core/rng'
 import AlgorithmMultiPicker from '../components/AlgorithmMultiPicker'
-import { algoColor, chart } from '../chartTheme'
+import { Button, Callout, Card, CardHeader, PageHeader, Progress, Select, Table, tbody, td, th, thead } from '../components/ui'
+import { algoColor, chart, tooltipStyle } from '../chartTheme'
 import { fmtInt } from '../format'
 import { useBenchmark } from '../useBenchmark'
 
@@ -88,98 +89,54 @@ export default function PerformanceScreen() {
 
   return (
     <div className="space-y-5">
-      <section>
-        <h2 className="text-xl font-bold">성능 비교</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          배열 크기를 두 배씩 늘리면서 셔플 1회의 실행 시간을 잰다. 크기가 두 배가 될 때 시간이 몇 배가 되는지 보면
-          시간 복잡도의 증가 추세를 실제로 확인할 수 있다.
-        </p>
-      </section>
+      <PageHeader
+        eyebrow="F · 성능"
+        title="성능 비교"
+        desc="배열 크기를 두 배씩 늘리면서 셔플 1회의 실행 시간을 잰다. 크기가 두 배가 될 때 시간이 몇 배가 되는지 보면 시간 복잡도의 증가 추세를 실제로 확인할 수 있다."
+      />
 
-      <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
-        <AlgorithmMultiPicker value={selected} onChange={setSelected} colors={algoColor} />
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <label className="flex items-center gap-2">
-            최대 크기
-            <select
-              value={maxExp}
-              onChange={(e) => setMaxExp(Number(e.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1"
-            >
-              {MAX_EXP_OPTIONS.map((e) => (
-                <option key={e} value={e}>
-                  2^{e} = {fmtInt(2 ** e)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
-            반복 측정
-            <select
-              value={samples}
-              onChange={(e) => setSamples(Number(e.target.value))}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1"
-            >
-              {SAMPLE_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s}회 (중앙값)
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="flex items-center gap-2">
-            난수
-            <select
-              value={rngKind}
-              onChange={(e) => setRngKind(e.target.value as RngKind)}
-              className="rounded-md border border-slate-300 bg-white px-2 py-1"
-            >
-              {RNG_OPTIONS.map((o) => (
-                <option key={o.kind} value={o.kind}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
+      <Card className="space-y-4">
+        <AlgorithmMultiPicker value={selected} onChange={setSelected} />
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <Select
+            label="최대 크기"
+            value={maxExp}
+            onChange={setMaxExp}
+            options={MAX_EXP_OPTIONS.map((e) => ({ value: e, label: `2^${e} = ${fmtInt(2 ** e)}` }))}
+          />
+          <Select
+            label="반복 측정"
+            value={samples}
+            onChange={setSamples}
+            options={SAMPLE_OPTIONS.map((v) => ({ value: v, label: `${v}회 (중앙값)` }))}
+          />
+          <Select
+            label="난수"
+            value={rngKind}
+            onChange={setRngKind}
+            options={RNG_OPTIONS.map((o) => ({ value: o.kind, label: o.label }))}
+          />
           <div className="ml-auto flex gap-2">
-            {running && (
-              <button
-                onClick={bench.cancel}
-                className="rounded-md border border-slate-300 bg-white px-3 py-1.5 hover:bg-slate-50"
-              >
-                취소
-              </button>
-            )}
-            <button
-              onClick={run}
-              disabled={running || selected.length === 0}
-              className="rounded-md bg-slate-900 px-4 py-1.5 font-medium text-white hover:bg-slate-700 disabled:opacity-40"
-            >
+            {running && <Button onClick={bench.cancel}>취소</Button>}
+            <Button variant="primary" onClick={run} disabled={running || selected.length === 0}>
               {running ? '측정 중…' : '측정 시작'}
-            </button>
+            </Button>
           </div>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-ink-3">
           크기 {fmtInt(2 ** MIN_EXP)}부터 두 배씩 잰다. 한 크기의 중앙값이 {BUDGET_MS}ms를 넘으면 그 알고리즘의 더 큰
           크기는 건너뛴다 (O(n²)인 Pick & Remove가 화면을 오래 붙잡지 않도록).
         </p>
-      </section>
+      </Card>
 
       {!cfg ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+        <p className="rounded-xl border border-dashed border-line-strong p-6 text-sm text-ink-3">
           조건을 고르고 "측정 시작"을 누른다. 측정은 별도 스레드(Web Worker)에서 알고리즘을 하나씩 순서대로 잰다.
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
-            <div className="h-1.5 w-40 overflow-hidden rounded bg-slate-100">
-              <div
-                className="h-full bg-slate-700 transition-[width]"
-                style={{
-                  width: `${bench.status === 'done' ? 100 : (bench.points.length / Math.max(1, totalPlanned)) * 100}%`,
-                }}
-              />
-            </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-ink-2">
+            <Progress value={bench.status === 'done' ? 1 : bench.points.length / Math.max(1, totalPlanned)} />
             {bench.measuring && (
               <span>
                 측정 중: {getAlgorithm(bench.measuring.algoId).name}, n = {fmtInt(bench.measuring.n)}
@@ -187,16 +144,16 @@ export default function PerformanceScreen() {
             )}
             {bench.status === 'done' && <span>측정 완료</span>}
             {bench.status === 'cancelled' && <span>취소됨</span>}
-            {bench.status === 'error' && <span className="text-red-600">오류: {bench.error}</span>}
+            {bench.status === 'error' && <span className="text-bad">오류: {bench.error}</span>}
           </div>
           {bench.hiddenDuringRun && (
-            <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <Callout tone="warn">
               ⚠ 측정 중에 이 탭이 화면에서 숨겨진 적이 있다. 브라우저는 숨겨진 탭을 느리게 돌리므로 시간이 실제보다
               크게 나왔을 수 있다. 탭을 띄워 둔 채로 다시 측정한다.
-            </p>
+            </Callout>
           )}
 
-          <div className="flex flex-wrap gap-4 text-xs text-slate-600">
+          <div className="flex flex-wrap gap-4 text-xs text-ink-2">
             {byAlgo.map(({ id }) => (
               <span key={id} className="flex items-center gap-1.5">
                 <span className="inline-block h-0.5 w-4" style={{ background: algoColor[id] }} />
@@ -228,34 +185,33 @@ export default function PerformanceScreen() {
       )}
 
       <section className="grid gap-4 lg:grid-cols-2">
-        <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-          <table className="w-full min-w-[420px] text-sm">
-            <thead className="bg-slate-50 text-left text-xs text-slate-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">알고리즘</th>
-                <th className="px-4 py-2 font-medium">시간</th>
-                <th className="px-4 py-2 font-medium">n이 2배일 때 시간</th>
-                <th className="px-4 py-2 font-medium">추가 공간</th>
+        <Table minWidth={420} caption="이론값. 공간 복잡도는 브라우저에서 메모리를 믿을 만하게 재기 어려워 이론 분석으로 대신한다.">
+          <thead className={thead}>
+            <tr>
+              <th className={th}>알고리즘</th>
+              <th className={th}>시간</th>
+              <th className={th}>n이 2배일 때 시간</th>
+              <th className={th}>추가 공간</th>
+            </tr>
+          </thead>
+          <tbody className={tbody}>
+            {algorithms.map((a) => (
+              <tr key={a.id}>
+                <td className={`${td} font-medium`}>
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: algoColor[a.id] }} />
+                    {a.name}
+                  </span>
+                </td>
+                <td className={`${td} font-mono`}>{a.time}</td>
+                <td className={td}>{expectedRatio[a.id]}</td>
+                <td className={`${td} font-mono`}>{a.space}</td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {algorithms.map((a) => (
-                <tr key={a.id}>
-                  <td className="px-4 py-2 font-medium">{a.name}</td>
-                  <td className="px-4 py-2 font-mono">{a.time}</td>
-                  <td className="px-4 py-2">{expectedRatio[a.id]}</td>
-                  <td className="px-4 py-2 font-mono">{a.space}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
-            이론값. 공간 복잡도는 브라우저에서 메모리를 믿을 만하게 재기 어려워 이론 분석으로 대신한다.
-          </p>
-        </div>
-        <div className="rounded-lg border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700">
-          <h3 className="font-semibold">측정 방법과 주의할 점</h3>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
+            ))}
+          </tbody>
+        </Table>
+        <Callout title="측정 방법과 주의할 점">
+          <ul className="list-disc space-y-1 pl-5">
             <li>배열 생성과 복사는 시간을 재기 전에 끝낸다. 난수 생성은 셔플의 일부라 포함한다.</li>
             <li>
               타이머 해상도보다 짧은 실행은 여러 배열을 연속으로 섞어 한 번에 잰 뒤 개수로 나눈다. 처음 몇 번은
@@ -268,7 +224,7 @@ export default function PerformanceScreen() {
               비율을 본다.
             </li>
           </ul>
-        </div>
+        </Callout>
       </section>
     </div>
   )
@@ -296,9 +252,8 @@ function ChartCard({
   const offsets = labelOffsets(lines.filter((l) => l.data.length).map((l) => ({ id: l.id, v: l.data[l.data.length - 1].v })))
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold">{title}</h3>
-      <p className="mt-1 text-xs text-slate-500">{desc}</p>
+    <Card>
+      <CardHeader title={title} desc={desc} />
       <div className="mt-3 h-72">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart margin={{ top: 12, right: 92, bottom: 4, left: 4 }}>
@@ -325,6 +280,7 @@ function ChartCard({
               width={56}
             />
             <Tooltip
+              {...tooltipStyle}
               formatter={(v, name) => [typeof v === 'number' ? format(v) : '—', name]}
               labelFormatter={(n) => `n = ${fmtInt(Number(n))}`}
             />
@@ -338,7 +294,7 @@ function ChartCard({
                   name={name}
                   stroke={algoColor[id]}
                   strokeWidth={2}
-                  dot={{ r: 3, fill: algoColor[id], stroke: '#fff', strokeWidth: 1 }}
+                  dot={{ r: 3, fill: algoColor[id], stroke: chart.surface, strokeWidth: 1 }}
                   isAnimationActive={false}
                   label={(props: { x?: number | string; y?: number | string; index?: number }) =>
                     props.index === data.length - 1 ? (
@@ -361,7 +317,7 @@ function ChartCard({
           </LineChart>
         </ResponsiveContainer>
       </div>
-    </section>
+    </Card>
   )
 }
 
@@ -376,47 +332,52 @@ function ResultTable({
 }) {
   const ratios = Object.fromEntries(byAlgo.map((s) => [s.id, doublingRatios(s.points)]))
   return (
-    <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-      <table className="w-full min-w-[560px] text-sm">
-        <thead className="bg-slate-50 text-left text-xs text-slate-500">
-          <tr>
-            <th className="px-4 py-2 font-medium">n</th>
-            {byAlgo.map(({ id }) => (
-              <th key={id} className="px-4 py-2 font-medium">
+    <Table
+      minWidth={560}
+      caption={
+        <>
+          셔플 1회 시간의 중앙값 ({cfg.samples}회 측정). ×값은 바로 위 크기(n/2) 대비 시간 비율이다. 난수:{' '}
+          {RNG_OPTIONS.find((o) => o.kind === cfg.rngKind)?.label}
+        </>
+      }
+    >
+      <thead className={thead}>
+        <tr>
+          <th className={th}>n</th>
+          {byAlgo.map(({ id }) => (
+            <th key={id} className={th}>
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden className="inline-block h-2 w-2 rounded-full" style={{ background: algoColor[id] }} />
                 {getAlgorithm(id).name}
-              </th>
-            ))}
+              </span>
+            </th>
+          ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 font-mono">
+        <tbody className={`${tbody} font-mono`}>
           {cfg.sizes.map((n) => (
             <tr key={n}>
-              <td className="px-4 py-1.5 text-slate-600">{fmtInt(n)}</td>
+              <td className={`${td} py-1.5 text-ink-2`}>{fmtInt(n)}</td>
               {byAlgo.map(({ id, points }) => {
                 const k = points.findIndex((p) => p.n === n)
                 const sk = skipped[id]
                 if (k < 0)
                   return (
-                    <td key={id} className="px-4 py-1.5 font-sans text-xs text-slate-400">
+                    <td key={id} className={`${td} py-1.5 font-sans text-xs text-ink-3`}>
                       {sk !== undefined && n >= sk ? '건너뜀' : ''}
                     </td>
                   )
                 const r = ratios[id][k]
                 return (
-                  <td key={id} className="px-4 py-1.5">
+                  <td key={id} className={`${td} py-1.5`}>
                     {fmtTime(points[k].medianMs)}
-                    {r !== undefined && <span className="ml-2 text-xs text-slate-400">×{r.toFixed(2)}</span>}
+                    {r !== undefined && <span className="ml-2 text-xs text-ink-3">×{r.toFixed(2)}</span>}
                   </td>
                 )
               })}
             </tr>
           ))}
         </tbody>
-      </table>
-      <p className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
-        셔플 1회 시간의 중앙값 ({cfg.samples}회 측정). ×값은 바로 위 크기(n/2) 대비 시간 비율이다. 난수:{' '}
-        {RNG_OPTIONS.find((o) => o.kind === cfg.rngKind)?.label}
-      </p>
-    </section>
+    </Table>
   )
 }

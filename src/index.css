@@ -1,16 +1,144 @@
 @import 'tailwindcss';
 
-@theme {
+/*
+ * 색은 모두 이 파일의 CSS 변수(토큰)로 관리한다.
+ * 화면과 차트 코드는 역할 이름(bg-surface, text-ink-2, var(--algo-fy) …)만 쓰고,
+ * 실제 값은 테마(data-theme)에 따라 여기서 바뀐다. 기본값은 다크 테마다.
+ *
+ * - 알고리즘 색: B~F 어디서나 같은 알고리즘을 뜻한다 (dataviz 기준 팔레트 1~4번, 색약 검사 통과).
+ * - 동작 역할 색: C 화면의 i, j. 알고리즘 색과 겹치지 않는 보라·자홍 (색약 검사 통과).
+ *   위치가 확정된 칸은 색 대신 중립 톤 + ✓ 표시로 구분한다.
+ * - 상태 색: 균등 / 비균등 / 주의. 이 용도로만 쓴다.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #0d1117;
+  --surface: #151b23;
+  --surface-2: #1c232d;
+  --surface-3: #252e3a;
+  --line: #262f3b;
+  --line-strong: #3a4553;
+  --ink: #e6edf3;
+  --ink-2: #b3bdc9;
+  --ink-3: #8b96a5;
+  --accent: #e6edf3;
+  --accent-hover: #c9d3dd;
+  --accent-ink: #0d1117;
+  --link: #79b0ff;
+  --focus: #79b0ff;
+  --code-bg: #0b0f14;
+  --code-ink: #c9d1d9;
+  --code-muted: #6e7681;
+  --code-active: rgba(240, 190, 80, 0.16);
+  --code-active-ink: #f5dfa8;
+
+  --algo-fy: #3987e5;
+  --algo-pr: #d95926;
+  --algo-naive: #199e70;
+  --algo-rk: #c98500;
+
+  --role-i: #9085e9;
+  --role-j: #d55181;
+  --role-ink: #0d1117;
+
+  --good: #4fbf73;
+  --good-soft: rgba(79, 191, 115, 0.14);
+  --bad: #f07171;
+  --bad-soft: rgba(240, 113, 113, 0.14);
+  --warn: #e0a83a;
+  --warn-soft: rgba(224, 168, 58, 0.14);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #f1f3f6;
+  --surface-3: #e4e8ed;
+  --line: #e2e6eb;
+  --line-strong: #c9d0d8;
+  --ink: #0f172a;
+  --ink-2: #475569;
+  --ink-3: #64748b;
+  --accent: #0f172a;
+  --accent-hover: #334155;
+  --accent-ink: #ffffff;
+  --link: #1d4ed8;
+  --focus: #2563eb;
+  --code-bg: #0f172a;
+  --code-ink: #cbd5e1;
+  --code-muted: #64748b;
+  --code-active: rgba(252, 211, 77, 0.2);
+  --code-active-ink: #fef3c7;
+
+  --algo-fy: #2a78d6;
+  --algo-pr: #eb6834;
+  --algo-naive: #1baf7a;
+  --algo-rk: #eda100;
+
+  --role-i: #6250d6;
+  --role-j: #d55181;
+  --role-ink: #ffffff;
+
+  --good: #15803d;
+  --good-soft: #dcfce7;
+  --bad: #b91c1c;
+  --bad-soft: #fee2e2;
+  --warn: #a16207;
+  --warn-soft: #fef3c7;
+}
+
+@theme inline {
   --font-sans: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* 시각화 역할 색상: 모든 화면에서 같은 의미로 사용 */
-  --color-role-i: #2563eb; /* 현재 위치 i */
-  --color-role-j: #ea580c; /* 무작위로 선택된 j */
-  --color-role-fixed: #16a34a; /* 위치가 확정된 구간 */
-  --color-role-biased: #dc2626; /* 비균등(Naive) 경고 */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
+  --color-code-bg: var(--code-bg);
+  --color-code-ink: var(--code-ink);
+  --color-code-muted: var(--code-muted);
+  --color-code-active: var(--code-active);
+  --color-code-active-ink: var(--code-active-ink);
+
+  --color-role-i: var(--role-i);
+  --color-role-j: var(--role-j);
+  --color-role-ink: var(--role-ink);
+
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-bg font-sans text-ink antialiased;
+}
+
+/* 키보드로 이동할 때만 포커스 테두리를 보여준다 */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* 숫자는 자릿수가 바뀌어도 폭이 흔들리지 않게 */
+.font-mono,
+table {
+  font-variant-numeric: tabular-nums;
 }
