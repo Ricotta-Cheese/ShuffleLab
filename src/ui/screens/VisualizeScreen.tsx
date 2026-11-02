@@ -114,6 +114,8 @@ function Player({ id, initial, trace }: { id: AlgorithmId; initial: number[]; tr
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return
+      // 버튼·링크에 포커스가 있을 때 스페이스는 그 버튼을 누르는 키로 둔다
+      if (e.key === ' ' && (e.target instanceof HTMLButtonElement || e.target instanceof HTMLAnchorElement)) return
       if (e.key === 'ArrowRight') setIndex((k) => Math.min(k + 1, last))
       else if (e.key === 'ArrowLeft') setIndex((k) => Math.max(k - 1, 0))
       else if (e.key === ' ') {

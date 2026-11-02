@@ -122,7 +122,7 @@ export function IntInput({
   )
 }
 
-/** 몇 개 중 하나를 고르는 버튼 묶음 */
+/** 몇 개 중 하나를 고르는 버튼 묶음. 선택 상태는 aria-pressed로 알린다. */
 export function Segmented<V extends string | number>({
   value,
   onChange,
@@ -137,14 +137,13 @@ export function Segmented<V extends string | number>({
   size?: 'sm' | 'md'
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="inline-flex rounded-lg bg-surface-3 p-0.5">
+    <div role="group" aria-label={ariaLabel} className="inline-flex rounded-lg bg-surface-3 p-0.5">
       {options.map((o) => {
         const on = o.value === value
         return (
           <button
             key={o.value}
-            role="radio"
-            aria-checked={on}
+            aria-pressed={on}
             onClick={() => onChange(o.value)}
             className={cx(
               'rounded-md text-sm transition-colors',

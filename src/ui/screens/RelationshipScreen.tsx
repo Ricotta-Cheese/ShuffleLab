@@ -200,7 +200,13 @@ function MovementDiagram({
 
   return (
     <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${bottom + 42}`} className="w-full" style={{ minWidth: Math.min(W, n * 34) }}>
+      <svg
+        viewBox={`0 0 ${W} ${bottom + 42}`}
+        className="w-full"
+        style={{ minWidth: Math.min(W, n * 34) }}
+        role="img"
+        aria-label={`원본 [${values.join(', ')}]이 결과 [${shuffled.join(', ')}]로 바뀌었어요`}
+      >
         {values.map((_, o) => (
           <line
             key={o}

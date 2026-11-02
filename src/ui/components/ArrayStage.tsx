@@ -56,7 +56,20 @@ export default function ArrayStage({ step, n, withOutput, durationMs }: Props) {
   const transition = { transitionDuration: `${durationMs}ms` }
 
   return (
-    <div className="relative select-none" style={{ height: rows.length * ROW_H }}>
+    <div
+      className="relative select-none"
+      style={{ height: rows.length * ROW_H }}
+      role="img"
+      aria-label={[
+        `${rows[0]} [${step.array.join(', ')}]`,
+        step.output && `결과 배열 [${step.output.join(', ')}]`,
+        step.i !== undefined && `i = ${step.i}`,
+        step.j !== undefined && `j = ${step.j}`,
+        step.fixed.length > 0 && `확정된 칸 ${step.fixed.join(', ')}`,
+      ]
+        .filter(Boolean)
+        .join(', ')}
+    >
       {rows.map((label, r) => (
         <div key={label} className="absolute inset-x-0" style={{ top: r * ROW_H }}>
           <div className="text-xs font-medium text-ink-3" style={{ height: LABEL_H }}>
