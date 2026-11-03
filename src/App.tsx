@@ -4,11 +4,14 @@ import { description } from './content/description'
 import ConsolePanel, { ConsoleToggle } from './ui/components/ConsolePanel'
 import { ScreenPager, TopNav } from './ui/components/ScreenNav'
 import ThemeToggle from './ui/components/ThemeToggle'
+import TutorialPanel, { TutorialToggle } from './ui/components/TutorialPanel'
 import { useConsoleOpen } from './ui/console'
 import { screens } from './ui/screens'
+import { useTutorial } from './ui/tutorial'
 
 export default function App() {
   const [consoleOpen] = useConsoleOpen()
+  const tutorial = useTutorial()
   const { pathname } = useLocation()
   return (
     // 콘솔을 열면 넓은 화면(xl 이상)에서는 화면 전체를 왼쪽으로 밀어 콘솔과 나란히 둔다.
@@ -25,12 +28,14 @@ export default function App() {
               Shuffle Lab
             </h1>
             <div className="flex gap-2 md:hidden">
+              <TutorialToggle />
               <ConsoleToggle />
               <ThemeToggle />
             </div>
           </div>
           <TopNav />
           <div className="hidden gap-2 md:flex">
+            <TutorialToggle />
             <ConsoleToggle />
             <ThemeToggle />
           </div>
@@ -50,6 +55,8 @@ export default function App() {
             </Routes>
           </div>
           <ScreenPager />
+          {/* 펼친 가이드 창이 화면 맨 아래(이전/다음 이동)를 가리지 않도록 그만큼 비워 둔다 */}
+          {tutorial.active && !tutorial.collapsed && <div aria-hidden className="h-[60dvh] md:h-72" />}
         </Suspense>
       </main>
 
@@ -68,6 +75,7 @@ export default function App() {
           </p>
         </div>
       </footer>
+      <TutorialPanel />
       <ConsolePanel />
     </div>
   )

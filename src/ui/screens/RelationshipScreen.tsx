@@ -5,7 +5,7 @@ import { seededRng } from '../../core/rng'
 import { factorial } from '../../core/algorithms/recorder'
 import { DIST_RUNS, DIST_SEED_OFFSET, repeatKendall } from '../../core/relationship'
 import { kendall, originalPositions } from '../../core/stats/kendall'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import AlgorithmPicker from '../components/AlgorithmPicker'
 import HypothesisNote from '../components/HypothesisNote'
 import InputArrayPicker from '../components/InputArrayPicker'
@@ -26,10 +26,36 @@ const MIN_N = 2
 const MAX_N = 20
 const PAIR_GRID_MAX = 12
 
+/** ?n=으로 원소 수를 주면 [1, 2, …, n]을 입력으로 쓴다 (보고서·실험 가이드와 같은 입력) */
+function valuesFromN(raw: string | null): string[] | undefined {
+  const n = Number(raw)
+  if (raw === null || !Number.isInteger(n) || n < MIN_N || n > MAX_N) return undefined
+  return Array.from({ length: n }, (_, k) => String(k + 1))
+}
+
 export default function RelationshipScreen() {
   const [id, setId] = useAlgorithmParam()
-  const [values, setValues] = useState(() => randomDistinctValues(8))
-  const [seed, setSeed] = useState(1)
+  const [params, setParams] = useSearchParams()
+  const nParam = params.get('n')
+  const [values, setValues] = useState(() => valuesFromN(nParam) ?? randomDistinctValues(8))
+  // 같은 화면에 있는 채로 주소의 n이 바뀌면(실험 가이드가 조건을 채울 때) 입력을 다시 만든다
+  const [seenN, setSeenN] = useState(nParam)
+  if (nParam !== seenN) {
+    setSeenN(nParam)
+    const v = valuesFromN(nParam)
+    if (v) setValues(v)
+  }
+  // 시드는 C 화면처럼 주소(?seed=)에 둔다
+  const rawSeed = Number(params.get('seed'))
+  const seed = Number.isInteger(rawSeed) && rawSeed >= 1 && rawSeed <= 999_999 ? rawSeed : 1
+  const setSeed = (v: number) =>
+    setParams(
+      (p) => {
+        p.set('seed', String(v))
+        return p
+      },
+      { replace: true },
+    )
   const algo = getAlgorithm(id)
 
   const shuffled = useMemo(() => algo.shuffle([...values], seededRng(seed)), [algo, values, seed])
@@ -112,7 +138,7 @@ export default function RelationshipScreen() {
       </Card>
 
       {/* 결과 요약을 먼저 보여주고, 그 근거(위치 이동)를 옆에 둔다 */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div data-tour="rel-result" className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
         <Card>
           <CardHeader title="이번 결과의 관계성" />
           <div className="grid grid-cols-2 gap-3">
@@ -392,7 +418,7 @@ function TauDistribution({
 
   if (values.length < 2) return null
   return (
-    <Card>
+    <Card tour="rel-dist">
       <CardHeader
         title={`같은 입력을 ${DIST_RUNS.toLocaleString()}번 섞었을 때 τ의 분포 · ${algoName}`}
         desc="한 번의 결과만으로는 셔플의 품질을 판단할 수 없어요. 같은 입력을 여러 번 섞으면 τ가 어떻게 퍼지는지 볼 수 있어요."
@@ -463,7 +489,7 @@ function RotationExample({ values }: { values: string[] }) {
   const fmtTiny = (v: number) => (v >= 1e-4 ? fmtNum(v, 4) : v.toExponential(2))
 
   return (
-    <Card>
+    <Card tour="rel-rotation">
       <CardHeader
         title={`비교 사례 · 항상 ${k}칸 회전하는 "셔플"`}
         desc="무작위성이 전혀 없는 규칙이에요. 이 규칙이 만든 결과도 관계성 지수로만 보면 원본과 관계가 낮아 보일 수 있어요."

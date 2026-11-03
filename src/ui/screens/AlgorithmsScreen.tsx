@@ -125,7 +125,9 @@ export default function AlgorithmsScreen() {
             </>
           }
         />
-        <ComparisonTable />
+        <div data-tour="complexity-table">
+          <ComparisonTable />
+        </div>
       </div>
 
       <section className="space-y-4">

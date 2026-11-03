@@ -158,7 +158,7 @@ function Player({ id, seed, initial, trace }: { id: AlgorithmId; seed: number; i
   }
 
   return (
-    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div data-tour="viz-player" className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="space-y-4">
         <Card>
           <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-3">

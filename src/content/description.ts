@@ -1,6 +1,12 @@
 // A. 설명 화면에 표시할 내용. 문구와 링크는 이 파일만 고치면 된다.
 // 링크가 빈 문자열이면 화면에 '준비 중'으로 표시된다.
 
+const GITHUB = 'https://github.com/Ricotta-Cheese/ShuffleLab'
+const REPORT_NAME = '20253067_임성민_알고리즘_과제'
+/** main 브랜치 Report-Docs 폴더의 보고서 파일 (파일 이름이 한글이라 주소에 넣을 때 인코딩한다) */
+const reportFile = (ext: 'pdf' | 'docx') =>
+  `${GITHUB}/blob/main/Report-Docs/${encodeURIComponent(`${REPORT_NAME}.${ext}`)}`
+
 export const description = {
   title: 'Shuffle Lab',
   subtitle: '배열 셔플 알고리즘의 효율성, 관계성 및 균등성 비교 분석',
@@ -28,7 +34,10 @@ export const description = {
   aiNote: '이 사이트는 AI 도구의 도움을 받아 구현했어요.',
 
   links: {
-    github: 'https://github.com/Ricotta-Cheese/ShuffleLab',
-    report: '', // PDF 보고서 링크 (예: public/report.pdf에 넣으면 '/report.pdf')
+    github: GITHUB,
+    // 보고서는 저장소 main 브랜치의 Report-Docs 폴더에 PDF와 Word로 함께 올려 둔다
+    reportFolder: `${GITHUB}/tree/main/Report-Docs`,
+    reportPdf: reportFile('pdf'),
+    reportDocx: reportFile('docx'),
   },
 }

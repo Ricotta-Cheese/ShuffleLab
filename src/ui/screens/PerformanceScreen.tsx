@@ -144,7 +144,7 @@ export default function PerformanceScreen() {
 
       <Card className="space-y-5">
         <SettingRow label="추천 설정">
-          <div className="flex flex-wrap gap-2">
+          <div data-tour="perf-presets" className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
               <Button key={p.label} disabled={running} onClick={() => runPreset(p)} title={p.desc}>
                 {p.label}

@@ -4,8 +4,31 @@ import { sliderClass, useSlider } from '../useSlider'
 
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(' ')
 
-export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <section className={cx('min-w-0 rounded-xl border border-line bg-surface p-4 sm:p-5', className)}>{children}</section>
+/** tour: 실험 가이드가 이 카드를 강조할 때 쓰는 이름 (data-tour) */
+export function Card({ children, className, tour }: { children: ReactNode; className?: string; tour?: string }) {
+  return (
+    <section data-tour={tour} className={cx('min-w-0 rounded-xl border border-line bg-surface p-4 sm:p-5', className)}>
+      {children}
+    </section>
+  )
+}
+
+/**
+ * 마우스를 올리거나 키보드로 고르면 아래에 작게 뜨는 이름표 (헤더 아이콘 버튼용).
+ * 오른쪽 끝 버튼도 화면 밖으로 나가지 않게 오른쪽에 맞춘다. 터치 화면에서는 hover가 없어 뜨지 않는다.
+ */
+export function Tooltip({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <span className="group/tip relative inline-flex">
+      {children}
+      <span
+        role="tooltip"
+        className="pointer-events-none absolute top-full right-0 z-50 mt-2 rounded-md bg-ink px-2 py-1 text-xs font-medium whitespace-nowrap text-bg opacity-0 shadow-lg transition-opacity duration-150 group-hover/tip:opacity-100 group-hover/tip:delay-200 group-has-[:focus-visible]/tip:opacity-100"
+      >
+        {label}
+      </span>
+    </span>
+  )
 }
 
 /** 화면 맨 위 제목 */

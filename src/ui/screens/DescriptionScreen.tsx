@@ -11,7 +11,8 @@ function LinkCard({ label, href, hint }: { label: string; href: string; hint: st
   const body = (
     <>
       <span className="text-sm font-semibold">{label}</span>
-      <span className="mt-0.5 block truncate font-mono text-xs text-ink-3">{ready ? href : '준비 중'}</span>
+      {/* 한글 파일 이름이 %EC…로 보이지 않게 풀어서 보여준다 */}
+      <span className="mt-0.5 block truncate font-mono text-xs text-ink-3">{ready ? decodeURI(href) : '준비 중'}</span>
       <span className="mt-2 block text-xs text-ink-3">{hint}</span>
     </>
   )
@@ -108,7 +109,7 @@ function Tour() {
 
 function Hypotheses({ active }: { active: string }) {
   return (
-    <section id="hypotheses" className="scroll-mt-24">
+    <section id="hypotheses" data-tour="hypotheses" className="scroll-mt-24">
       <SectionTitle>연구 가설</SectionTitle>
       <p className="mt-1 text-xs text-ink-3">
         각 가설은 해당 화면에서 직접 실험해 확인해요. 화면마다 지금 돌린 결과가 가설과 어떻게 연결되는지 보여줘요.
@@ -197,10 +198,18 @@ export default function DescriptionScreen() {
 
       <section>
         <SectionTitle>링크</SectionTitle>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
           <LinkCard label="GitHub 저장소" href={links.github} hint="소스 코드와 실험 코드" />
-          <LinkCard label="보고서 (PDF)" href={links.report} hint="분석 결과와 단계별 설명" />
+          <LinkCard label="보고서 (PDF)" href={links.reportPdf} hint="분석 결과와 단계별 설명" />
+          <LinkCard label="보고서 (Word)" href={links.reportDocx} hint="같은 보고서의 .docx 원본" />
         </div>
+        <p className="mt-2 text-xs text-ink-3">
+          두 파일 모두 저장소의{' '}
+          <a href={links.reportFolder} target="_blank" rel="noreferrer" className="text-link hover:underline">
+            Report-Docs 폴더
+          </a>
+          에 있어요.
+        </p>
       </section>
     </div>
   )

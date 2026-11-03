@@ -287,7 +287,7 @@ export default function CompareScreen() {
           </div>
         </fieldset>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+        <div data-tour="compare-run" className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <Button variant="primary" onClick={runAll} disabled={running || !canRun}>
             {running ? '측정 중…' : '측정 시작'}
           </Button>

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { clearLog, useConsoleOpen, useLog, type LogLevel } from '../console'
+import { Tooltip } from './ui'
 
 const levelClass: Record<LogLevel, string> = {
   info: 'text-console-ink-2',
@@ -18,20 +19,21 @@ const clock = (t: number) => {
 export function ConsoleToggle() {
   const [open, setOpen] = useConsoleOpen()
   return (
-    <button
-      onClick={() => setOpen(!open)}
-      aria-pressed={open}
-      aria-label={open ? '콘솔 닫기' : '콘솔 열기'}
-      title={open ? '콘솔 닫기' : '콘솔 열기 (연산 과정 보기)'}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition duration-150 active:scale-90 ${
-        open ? 'border-ink-2 bg-surface-3 text-ink' : 'border-line-strong text-ink-2 hover:bg-surface-2 hover:text-ink'
-      }`}
-    >
-      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <rect x="3" y="4" width="18" height="16" rx="2" />
-        <path d="M7 9l3 3-3 3M13 15h4" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </button>
+    <Tooltip label={open ? '콘솔 닫기' : '콘솔 열기 (연산 과정 보기)'}>
+      <button
+        onClick={() => setOpen(!open)}
+        aria-pressed={open}
+        aria-label={open ? '콘솔 닫기' : '콘솔 열기'}
+        className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border transition duration-150 active:scale-90 ${
+          open ? 'border-ink-2 bg-surface-3 text-ink' : 'border-line-strong text-ink-2 hover:bg-surface-2 hover:text-ink'
+        }`}
+      >
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M7 9l3 3-3 3M13 15h4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+    </Tooltip>
   )
 }
 

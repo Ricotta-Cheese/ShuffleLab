@@ -165,7 +165,7 @@ export default function UniformityScreen() {
 
       <Card className="space-y-5">
         <SettingRow label="추천 실험">
-          <div className="flex flex-wrap gap-2">
+          <div data-tour="uni-presets" className="flex flex-wrap gap-2">
             {PRESETS.map((p) => (
               <Button key={p.label} disabled={running} onClick={() => runPreset(p)} title={p.desc}>
                 {p.label}
