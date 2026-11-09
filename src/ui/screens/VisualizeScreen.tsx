@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { getAlgorithm, type AlgorithmId, type Counters, type Trace } from '../../core/algorithms'
 import { seededRng } from '../../core/rng'
@@ -9,11 +9,14 @@ import ArrayStage from '../components/ArrayStage'
 import Metric from '../components/Metric'
 import Pseudocode from '../components/Pseudocode'
 import ScreenHeader from '../components/ScreenHeader'
+import StepTimeline from '../components/StepTimeline'
 import UniformBadge from '../components/UniformBadge'
 import { Button, Card, CardHeader, IntInput, Segmented, Select } from '../components/ui'
 import { log } from '../console'
 import { fmtNum } from '../format'
 import { useAlgorithmParam } from '../useAlgorithmParam'
+
+type View = 'step' | 'all'
 
 const MIN_N = 2
 const MAX_N = 10
@@ -49,8 +52,10 @@ export default function VisualizeScreen() {
   const [params, setParams] = useSearchParams()
   const n = clampInt(params.get('n'), MIN_N, MAX_N, 6)
   const seed = clampInt(params.get('seed'), 1, 999_999, 1)
+  // 보기 방식: 한 단계씩(기본) 또는 전체 펼치기(?view=all)
+  const view: View = params.get('view') === 'all' ? 'all' : 'step'
 
-  const setParam = (key: string, value: number) =>
+  const setParam = (key: string, value: number | string) =>
     setParams(
       (p) => {
         p.set(key, String(value))
@@ -61,6 +66,19 @@ export default function VisualizeScreen() {
 
   const initial = useMemo(() => Array.from({ length: n }, (_, k) => k + 1), [n])
   const trace = useMemo(() => getAlgorithm(id).trace(initial, seededRng(seed)), [id, initial, seed])
+  const algo = getAlgorithm(id)
+
+  // 두 보기를 오갈 때 보던 단계를 이어받는다. 알고리즘·크기·시드가 바뀌면 처음부터 다시 본다.
+  const traceKey = `${id}-${n}-${seed}`
+  const [pos, setPos] = useState({ key: traceKey, index: 0 })
+  const current = pos.key === traceKey ? pos.index : 0
+  const setCurrent = useCallback(
+    (index: number) => setPos((p) => (p.key === traceKey && p.index === index ? p : { key: traceKey, index })),
+    [traceKey],
+  )
+
+  const final = trace.steps[trace.steps.length - 1].counters
+  const summary = visibleCounters[id].map((k) => `${counterLabels[k]} ${final[k]}번`).join(' · ')
 
   return (
     <div className="space-y-5">
@@ -82,17 +100,67 @@ export default function VisualizeScreen() {
           <Button size="sm" onClick={() => setParam('seed', 1 + Math.floor(Math.random() * 999_999))}>
             새로 섞기
           </Button>
+          <Segmented
+            ariaLabel="보기 방식"
+            size="sm"
+            value={view}
+            onChange={(v) => setParam('view', v)}
+            options={[
+              { value: 'step', label: '한 단계씩' },
+              { value: 'all', label: '전체 펼치기' },
+            ]}
+          />
         </div>
       </div>
 
-      {/* 알고리즘·크기·시드가 바뀌면 재생 상태를 처음부터 다시 시작한다 */}
-      <Player key={`${id}-${n}-${seed}`} id={id} seed={seed} initial={initial} trace={trace} />
+      {view === 'all' ? (
+        <Card>
+          <StepTimeline
+            id={id}
+            name={algo.name}
+            seed={seed}
+            initial={initial}
+            trace={trace}
+            currentStep={current}
+            summary={summary}
+            onOpenStep={(index) => {
+              setCurrent(index)
+              setParam('view', 'step')
+            }}
+          />
+        </Card>
+      ) : (
+        // 알고리즘·크기·시드가 바뀌면 재생 상태를 처음부터 다시 시작한다
+        <Player
+          key={traceKey}
+          id={id}
+          seed={seed}
+          initial={initial}
+          trace={trace}
+          initialIndex={current}
+          onIndexChange={setCurrent}
+        />
+      )}
     </div>
   )
 }
 
-function Player({ id, seed, initial, trace }: { id: AlgorithmId; seed: number; initial: number[]; trace: Trace<number> }) {
-  const [index, setIndex] = useState(0)
+function Player({
+  id,
+  seed,
+  initial,
+  trace,
+  initialIndex,
+  onIndexChange,
+}: {
+  id: AlgorithmId
+  seed: number
+  initial: number[]
+  trace: Trace<number>
+  initialIndex: number
+  onIndexChange: (index: number) => void
+}) {
+  const [index, setIndex] = useState(initialIndex)
   const [playRequested, setPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
 
@@ -117,6 +185,9 @@ function Player({ id, seed, initial, trace }: { id: AlgorithmId; seed: number; i
     const arrays = step.output ? `결과 [${step.output.join(', ')}] · 남은 [${step.array.join(', ')}]` : `[${step.array.join(', ')}]`
     log('C 시각화', `#${index} ${step.kind}  ${step.what}\n  ${arrays}\n  ${counters}`, step.kind === 'done' ? 'result' : 'step')
   }, [index, algo.name, initial.length, seed, last, id, step])
+
+  // 전체 펼치기로 바꿨을 때 보던 단계를 표시할 수 있게 알린다
+  useEffect(() => onIndexChange(index), [index, onIndexChange])
 
   useEffect(() => {
     if (!playing) return
