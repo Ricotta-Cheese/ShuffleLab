@@ -87,9 +87,21 @@ export default function VisualizeScreen() {
         desc={`원소 ${MIN_N}~${MAX_N}개로 셔플 과정을 한 단계씩 따라가요. 같은 시드는 항상 같은 과정을 재현해요.`}
       />
 
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <AlgorithmPicker value={id} onChange={setId} />
-        <div className="flex flex-wrap items-center gap-3">
+      {/* 설정은 한 카드에: 위 줄은 무엇을 볼지(알고리즘·보기 방식), 아래 줄은 입력(원소 수·시드) */}
+      <Card className="space-y-4">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <AlgorithmPicker value={id} onChange={setId} />
+          <Segmented
+            ariaLabel="보기 방식"
+            value={view}
+            onChange={(v) => setParam('view', v)}
+            options={[
+              { value: 'step', label: '한 단계씩' },
+              { value: 'all', label: '전체 펼치기' },
+            ]}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-3 border-t border-line pt-4">
           <Select
             label="원소 수"
             value={n}
@@ -100,18 +112,11 @@ export default function VisualizeScreen() {
           <Button size="sm" onClick={() => setParam('seed', 1 + Math.floor(Math.random() * 999_999))}>
             새로 섞기
           </Button>
-          <Segmented
-            ariaLabel="보기 방식"
-            size="sm"
-            value={view}
-            onChange={(v) => setParam('view', v)}
-            options={[
-              { value: 'step', label: '한 단계씩' },
-              { value: 'all', label: '전체 펼치기' },
-            ]}
-          />
+          <p className="text-xs text-ink-3 lg:ml-auto">
+            입력 <span className="font-mono text-ink-2">[{initial.join(', ')}]</span> · 같은 시드는 항상 같은 과정을 재현해요
+          </p>
         </div>
-      </div>
+      </Card>
 
       {view === 'all' ? (
         <Card>
@@ -229,37 +234,30 @@ function Player({
   }
 
   return (
-    <div data-tour="viz-player" className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="space-y-4">
-        <Card>
-          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-ink-3">
-            <span>
-              초기 배열 <span className="font-mono text-ink">[{initial.join(', ')}]</span>
+    <div data-tour="viz-player" className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+      {/* 무대: 배열 → 이번 단계 설명 → 재생 조작을 한 카드 안에 위에서 아래로 둔다 */}
+      <Card className="flex flex-col gap-5 self-start">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <p className="flex items-center gap-2 text-sm">
+            <span className="font-semibold">
+              단계 <span className="font-mono">{index}</span>
+              <span className="font-mono font-normal text-ink-3"> / {last}</span>
             </span>
-            <Legend riffle={isRiffle} />
-          </div>
-          <ArrayStage step={step} n={initial.length} withOutput={isPickRemove} withPiles={isRiffle} durationMs={Math.min(450, delay * 0.6)} />
+            <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono text-[11px] text-ink-2">{step.kind}</span>
+          </p>
+          <Legend riffle={isRiffle} />
+        </div>
 
-          {/* 단계 설명은 배열 바로 아래에 두어 시선이 멀리 움직이지 않게 한다 */}
-          <div className="mt-4 border-t border-line pt-4">
-            <div className="flex items-center gap-2 text-xs text-ink-3">
-              <span className="font-mono">
-                단계 {index} / {last}
-              </span>
-              <span className="rounded bg-surface-3 px-1.5 py-0.5 font-mono">{step.kind}</span>
-            </div>
-            <div aria-live="polite">
-              <p className="mt-2 font-semibold">{step.what}</p>
-              <p className="mt-1 text-sm leading-relaxed text-ink-2">
-                <span className="font-medium text-ink">왜? </span>
-                {step.why}
-              </p>
-            </div>
-          </div>
-        </Card>
+        <ArrayStage step={step} n={initial.length} withOutput={isPickRemove} withPiles={isRiffle} durationMs={Math.min(450, delay * 0.6)} />
 
-        {/* 모바일에서는 화면 아래에 붙어 있어서, 배열과 설명을 보면서 바로 조작할 수 있다 */}
-        <Card className="sticky bottom-2 z-10 space-y-3 shadow-lg shadow-black/20 lg:static lg:shadow-none">
+        {/* 단계 설명은 배열 바로 아래에 두어 시선이 멀리 움직이지 않게 한다 */}
+        <div aria-live="polite" className="rounded-lg bg-surface-2 px-4 py-3">
+          <p className="font-semibold">{step.what}</p>
+          <p className="mt-1 text-sm leading-relaxed text-ink-2">{step.why}</p>
+        </div>
+
+        {/* 재생 조작. 휴대폰에서는 화면 아래에 붙어 있어서 배열과 설명을 보면서 바로 넘길 수 있다 */}
+        <div className="sticky bottom-2 z-10 -mx-2 space-y-3 rounded-lg bg-surface p-2 shadow-lg shadow-black/20 lg:static lg:m-0 lg:p-0 lg:shadow-none">
           <input
             type="range"
             min={0}
@@ -270,21 +268,23 @@ function Player({
             className="w-full accent-[var(--ink-2)]"
           />
           <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" onClick={() => go(0)} aria-label="처음으로" title="처음으로">
-              ⏮
-            </Button>
-            <Button size="sm" onClick={() => go(index - 1)} aria-label="이전 단계" title="이전 단계" disabled={index === 0}>
-              ◀ 이전
-            </Button>
-            <Button size="sm" variant="primary" onClick={togglePlay} className="min-w-20">
-              {playing ? '일시정지' : index >= last ? '다시 재생' : '재생'}
-            </Button>
-            <Button size="sm" onClick={() => go(index + 1)} aria-label="다음 단계" title="다음 단계" disabled={index === last}>
-              다음 ▶
-            </Button>
-            <Button size="sm" onClick={() => go(last)} aria-label="끝으로" title="끝으로">
-              ⏭
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button size="sm" variant="ghost" onClick={() => go(0)} aria-label="처음으로" title="처음으로" disabled={index === 0}>
+                ⏮
+              </Button>
+              <Button size="sm" onClick={() => go(index - 1)} aria-label="이전 단계" title="이전 단계 (←)" disabled={index === 0}>
+                ◀ 이전
+              </Button>
+              <Button size="sm" variant="primary" onClick={togglePlay} className="min-w-20" title="재생/일시정지 (스페이스)">
+                {playing ? '일시정지' : index >= last ? '다시 재생' : '재생'}
+              </Button>
+              <Button size="sm" onClick={() => go(index + 1)} aria-label="다음 단계" title="다음 단계 (→)" disabled={index === last}>
+                다음 ▶
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => go(last)} aria-label="끝으로" title="끝으로" disabled={index === last}>
+                ⏭
+              </Button>
+            </div>
             <div className="ml-auto">
               <Segmented
                 ariaLabel="재생 속도"
@@ -295,11 +295,10 @@ function Player({
               />
             </div>
           </div>
-          <p className="hidden text-xs text-ink-3 lg:block">키보드: ← → 단계 이동, 스페이스 재생/일시정지</p>
-        </Card>
-      </div>
+        </div>
+      </Card>
 
-      <aside className="space-y-4">
+      <aside className="space-y-5">
         <Card>
           <CardHeader
             title={
@@ -311,28 +310,28 @@ function Player({
           <Pseudocode lines={content.pseudocode} active={content.stepLines[step.kind]} />
         </Card>
 
-        <Card>
-          <CardHeader title="현재 배치의 관계성" />
-          <div className="grid grid-cols-2 gap-3">
-            <Metric label="Kendall's τ" value={fmtNum(rel.tau)} />
-            <Metric label="관계성 지수 R = |τ|" value={fmtNum(rel.r)} />
-            <Metric label="순서 유지 쌍 C" value={String(rel.concordant)} />
-            <Metric label="순서 뒤집힌 쌍 D" value={String(rel.discordant)} />
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-ink-3">
-            τ = 1은 원본과 같은 순서, −1은 완전히 반대 순서예요. R은 원본 순서와의 관계를 나타낼 뿐 무작위성 점수가
-            아니에요.
-            {isPickRemove && ' 이 알고리즘은 중간 단계에서 "결과 배열 뒤에 남은 배열을 이어 붙인 배치"로 계산해요.'}
-          </p>
-        </Card>
-
-        <Card>
-          <CardHeader title="누적 연산 횟수" />
-          <div className="grid grid-cols-2 gap-3">
-            {visibleCounters[id].map((k) => (
-              <Metric key={k} label={counterLabels[k]} value={String(step.counters[k])} />
-            ))}
-          </div>
+        {/* 지금 단계까지의 수치는 한 카드에 모은다 */}
+        <Card className="space-y-4">
+          <section>
+            <h3 className="text-sm font-semibold">누적 연산 횟수</h3>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {visibleCounters[id].map((k) => (
+                <Metric key={k} label={counterLabels[k]} value={String(step.counters[k])} />
+              ))}
+            </div>
+          </section>
+          <section className="border-t border-line pt-4">
+            <h3 className="text-sm font-semibold">원본과의 관계</h3>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Metric label="Kendall's τ" value={fmtNum(rel.tau)} />
+              <Metric label="R = |τ|" value={fmtNum(rel.r)} />
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-ink-3">
+              순서 유지 쌍 C = {rel.concordant}, 뒤집힌 쌍 D = {rel.discordant}. R은 원본과 닮은 정도일 뿐 무작위성
+              점수가 아니에요.
+              {isPickRemove && ' 중간 단계는 "결과 배열 + 남은 배열"을 이어 붙여 계산해요.'}
+            </p>
+          </section>
         </Card>
       </aside>
     </div>
@@ -341,7 +340,7 @@ function Player({
 
 function Legend({ riffle }: { riffle: boolean }) {
   return (
-    <span className="flex flex-wrap gap-3">
+    <span className="flex flex-wrap gap-3 text-xs text-ink-3">
       <span className="flex items-center gap-1">
         <span className="inline-block h-3 w-3 rounded-sm bg-role-i" />
         {riffle ? '위 더미' : 'i: 현재 위치'}
